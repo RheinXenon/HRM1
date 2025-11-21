@@ -117,6 +117,12 @@ class InterviewerAgent:
         """
         logger.info("正在评估候选人回答...")
         
+        # 先记录候选人的回答到对话历史
+        self.conversation_history.append({
+            "role": "candidate",
+            "content": answer
+        })
+        
         if target_skills is None:
             target_skills = []
         
@@ -352,9 +358,17 @@ class InterviewerAgent:
             content = entry.get("content", "")
             
             if role == "interviewer" and entry_type == "question":
-                formatted.append(f"\n面试官: {content}")
+                formatted.append(f"\n【面试官提问】: {content}")
+            elif role == "candidate":
+                # 包含候选人的回答
+                formatted.append(f"【候选人回答】: {content}")
             elif role == "interviewer" and entry_type == "evaluation":
-                score = content.get("score", 0) if isinstance(content, dict) else 0
-                formatted.append(f"  [评分: {score}/10]")
+                # 包含评估信息
+                if isinstance(content, dict):
+                    score = content.get("score", 0)
+                    feedback = content.get("feedback", "")
+                    formatted.append(f"  [评分: {score}/10 | 反馈: {feedback}]")
+                else:
+                    formatted.append(f"  [评分: {content}/10]")
         
         return "\n".join(formatted)
