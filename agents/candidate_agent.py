@@ -6,6 +6,16 @@
 from typing import Dict, List, Any
 from dataclasses import dataclass
 import json
+from loguru import logger
+
+from agents.prompts.candidate_prompts import (
+    CANDIDATE_SYSTEM_PROMPT,
+    SELF_INTRODUCTION_PROMPT,
+    ANSWER_GENERATION_PROMPT,
+    CANDIDATE_QUESTION_PROMPT,
+    get_skill_description,
+    format_personality_traits
+)
 
 
 @dataclass
@@ -39,8 +49,32 @@ class CandidateAgent:
         Returns:
             自我介绍文本
         """
-        # TODO: 实现自我介绍生成逻辑
-        pass
+        logger.info(f"候选人 {self.profile.name} 正在生成自我介绍...")
+        
+        # 构建系统提示词
+        system_prompt = self._build_system_prompt()
+        
+        try:
+            # 调用LLM生成自我介绍
+            introduction = self.llm_client.chat_with_system_prompt(
+                system_prompt=system_prompt,
+                user_message=SELF_INTRODUCTION_PROMPT,
+                temperature=0.8
+            )
+            
+            # 记录对话历史
+            self.conversation_history.append({
+                "role": "candidate",
+                "type": "introduction",
+                "content": introduction
+            })
+            
+            logger.success(f"✅ 自我介绍生成成功")
+            return introduction.strip()
+            
+        except Exception as e:
+            logger.error(f"❌ 自我介绍生成失败: {e}")
+            raise
     
     def answer_question(self, question: str, question_context: Dict = None) -> str:
         """
@@ -53,11 +87,52 @@ class CandidateAgent:
         Returns:
             候选人回答
         """
-        # TODO: 实现回答生成逻辑
-        # 1. 分析问题涉及的技能
-        # 2. 根据技能等级生成对应质量的回答
-        # 3. 应用性格特质影响回答风格
-        pass
+        logger.info(f"候选人正在回答问题...")
+        
+        if question_context is None:
+            question_context = {}
+        
+        # 获取问题相关信息
+        question_category = question_context.get("category", "未知")
+        related_skills = question_context.get("expected_skills", [])
+        
+        # 构建系统提示词
+        system_prompt = self._build_system_prompt()
+        
+        # 构建用户消息
+        user_message = ANSWER_GENERATION_PROMPT.format(
+            question=question,
+            question_category=question_category,
+            related_skills=", ".join(related_skills) if related_skills else "综合能力"
+        )
+        
+        try:
+            # 调用LLM生成回答
+            answer = self.llm_client.chat_with_system_prompt(
+                system_prompt=system_prompt,
+                user_message=user_message,
+                temperature=0.8
+            )
+            
+            # 记录对话历史
+            self.conversation_history.append({
+                "role": "interviewer",
+                "type": "question",
+                "content": question,
+                "context": question_context
+            })
+            self.conversation_history.append({
+                "role": "candidate",
+                "type": "answer",
+                "content": answer
+            })
+            
+            logger.success(f"✅ 回答生成成功")
+            return answer.strip()
+            
+        except Exception as e:
+            logger.error(f"❌ 回答生成失败: {e}")
+            raise
     
     def ask_question_to_interviewer(self) -> str:
         """
@@ -66,8 +141,32 @@ class CandidateAgent:
         Returns:
             候选人的问题
         """
-        # TODO: 实现候选人提问逻辑
-        pass
+        logger.info(f"候选人正在准备提问...")
+        
+        # 构建系统提示词
+        system_prompt = self._build_system_prompt()
+        
+        try:
+            # 调用LLM生成问题
+            questions = self.llm_client.chat_with_system_prompt(
+                system_prompt=system_prompt,
+                user_message=CANDIDATE_QUESTION_PROMPT,
+                temperature=0.8
+            )
+            
+            # 记录对话历史
+            self.conversation_history.append({
+                "role": "candidate",
+                "type": "question_to_interviewer",
+                "content": questions
+            })
+            
+            logger.success(f"✅ 候选人问题生成成功")
+            return questions.strip()
+            
+        except Exception as e:
+            logger.error(f"❌ 候选人提问生成失败: {e}")
+            raise
     
     def _get_skill_level(self, skill_name: str) -> int:
         """
@@ -81,9 +180,69 @@ class CandidateAgent:
         """
         return self.profile.skills.get(skill_name, 0)
     
+    def _build_system_prompt(self) -> str:
+        """
+        构建系统提示词
+        
+        Returns:
+            完整的系统提示词
+        """
+        # 格式化技能描述
+        skill_profile = "\n".join([
+            get_skill_description(skill, level)
+            for skill, level in self.profile.skills.items()
+        ])
+        
+        # 格式化工作经历
+        exp = self.profile.experience
+        work_experience = f"""
+工作年限: {exp.get('years', 0)}年
+职位级别: {exp.get('level', '未知')}
+项目经历: {len(exp.get('projects', []))}个项目
+"""
+        
+        # 如果有详细项目信息
+        if 'projects' in exp and isinstance(exp['projects'], list) and len(exp['projects']) > 0:
+            if isinstance(exp['projects'][0], dict):
+                work_experience += "\n主要项目:\n"
+                for i, proj in enumerate(exp['projects'][:3], 1):  # 最多显示3个
+                    work_experience += f"{i}. {proj.get('name', '项目')}: {proj.get('role', '开发者')} - {proj.get('achievement', '完成项目开发')}\n"
+        
+        # 格式化性格特质
+        personality_traits = format_personality_traits(self.profile.personality)
+        
+        # 获取性格参数用于模板
+        personality = self.profile.personality
+        comm = personality.get("communication", {})
+        resp = personality.get("response", {})
+        emot = personality.get("emotion", {})
+        
+        verbose = comm.get("verbose", 50)
+        technical = comm.get("technical", 50)
+        confidence = resp.get("confidence", 50)
+        nervousness = emot.get("nervousness", 20)
+        storytelling = resp.get("storytelling", 50)
+        enthusiasm = emot.get("enthusiasm", 70)
+        
+        # 构建完整提示词
+        system_prompt = CANDIDATE_SYSTEM_PROMPT.format(
+            skill_profile=skill_profile,
+            work_experience=work_experience,
+            personality_traits=personality_traits,
+            verbose=verbose,
+            technical=technical,
+            confidence=confidence,
+            nervousness=nervousness,
+            storytelling=storytelling,
+            enthusiasm=enthusiasm
+        )
+        
+        return system_prompt
+    
     def _apply_personality_style(self, base_answer: str) -> str:
         """
         根据性格特质调整回答风格
+        （当前版本由LLM直接处理风格，此方法保留用于后期优化）
         
         Args:
             base_answer: 基础回答内容
@@ -91,9 +250,6 @@ class CandidateAgent:
         Returns:
             应用性格风格后的回答
         """
-        # TODO: 实现性格风格应用逻辑
-        # - verbose: 影响回答长度
-        # - confidence: 影响语气确定性
-        # - technical: 影响专业术语使用
-        # - nervousness: 影响停顿和修正
-        pass
+        # Phase 1 中由LLM的系统提示词直接处理风格
+        # Phase 2 可以在这里添加后处理逻辑
+        return base_answer

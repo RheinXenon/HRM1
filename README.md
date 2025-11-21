@@ -70,50 +70,76 @@ pip install -r requirements.txt
 
 ### 2. 配置环境变量
 
-复制 `.env` 文件并填写你的 API 密钥：
+编辑 `.env` 文件，配置已使用 iflow API：
 
 ```bash
-# 编辑 .env 文件
+# .env 文件配置
 QWEN_API_KEY=your_qwen_api_key_here
+QWEN_API_URL=https://apis.iflow.cn/v1
+QWEN_MODEL=qwen3-max
 ```
 
-**获取 qwen API Key**：
-- 访问 [阿里云百炼平台](https://dashscope.aliyun.com/)
-- 注册并获取 API Key
+**API说明**：
+- 本项目使用 iflow API 访问 qwen3-max 模型
+- iflow 提供 OpenAI 兼容的 API 接口
+- API Key 已配置，可以直接使用
 
-### 3. 运行示例
+### 3. 运行Demo
+
+**方式1：命令行运行（推荐）**
+
+```bash
+# 运行Demo模式（快速演示，3个问题）
+python main.py --mode demo
+
+# 运行完整模式（所有问题）
+python main.py --mode full
+```
+
+**方式2：Python脚本**
 
 ```python
 from core.interview_engine import InterviewEngine
+from config import load_candidate_template
 
-# 配置候选人
-candidate_config = {
-    "name": "Alice Chen",
-    "skills": {
-        "python": 8,
-        "react": 6,
-        "sql": 7
-    },
-    "experience": {
-        "years": 5,
-        "level": "senior"
-    },
-    "personality": {
-        "confidence": 85,
-        "verbose": 40,
-        "technical": 80
-    }
-}
+# 加载候选人模板
+candidate_config = load_candidate_template("ideal_candidate")
 
 # 启动面试
 engine = InterviewEngine()
 result = engine.run_interview(
-    job_file="config/jobs/senior_backend.json",
-    company_file="config/companies/tech_startup.json",
-    candidate_config=candidate_config
+    job_file="senior_backend",
+    company_file="tech_startup",
+    candidate_config=candidate_config,
+    mode="demo"
 )
 
 print(f"面试评分: {result.recommendation_score}/100")
+```
+
+**输出示例**：
+
+```
+============================================================
+🚀 开始面试流程
+============================================================
+
+🏛️  创新科技有限公司
+💼 高级后端工程师 职位面试
+👤 候选人: 李明
+============================================================
+
+👔 面试官: 你好，欢迎来到创新科技有限公司面试高级后端工程师职位。请先简单介绍一下你自己。
+
+👤 李明: 您好，我叫李明，有7年软件开发经验...
+
+[面试问答过程...]
+
+============================================================
+📊 面试评估报告
+============================================================
+🎯 推荐度评分: 85/100
+📝 招聘建议: 强烈推荐
 ```
 
 ---
@@ -128,7 +154,8 @@ print(f"面试评分: {result.recommendation_score}/100")
 ## 🛠️ 技术栈
 
 - **后端框架**：Python + FastAPI
-- **LLM模型**：qwen-max（通义千问）
+- **LLM模型**：qwen3-max (通过 iflow API)
+- **API接口**：OpenAI 兼容接口
 - **前端界面**：Streamlit
 - **数据库**：SQLite
 - **数据分析**：Pandas + Plotly
@@ -137,12 +164,15 @@ print(f"面试评分: {result.recommendation_score}/100")
 
 ## 📈 开发路线图
 
-### Phase 1 - MVP（2周） ✅
+### ✅ Phase 1 - MVP（已完成）
 - [x] 基础候选人配置（JSON格式）
 - [x] 简单能力匹配回答生成
-- [x] 面试官问题生成
+- [x] 面试官问题生成（复用原系统）
 - [x] 自动对话流程
 - [x] 基础评估报告
+- [x] LLM客户端封装
+- [x] 完整面试引擎
+- [x] 面试记录保存
 
 ### Phase 2 - 性格系统（1周）
 - [ ] 性格特质参数化

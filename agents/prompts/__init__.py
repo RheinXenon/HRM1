@@ -3,7 +3,7 @@ Prompts模块
 包含所有Agent的Prompt模板
 """
 
-from .interviewer_prompts import (
+from agents.prompts.interviewer_prompts import (
     INTERVIEWER_SYSTEM_PROMPT,
     QUESTION_GENERATION_PROMPT,
     ANSWER_EVALUATION_PROMPT,
@@ -11,7 +11,7 @@ from .interviewer_prompts import (
     FINAL_REPORT_PROMPT
 )
 
-from .candidate_prompts import (
+from agents.prompts.candidate_prompts import (
     CANDIDATE_SYSTEM_PROMPT,
     SELF_INTRODUCTION_PROMPT,
     ANSWER_GENERATION_PROMPT,
