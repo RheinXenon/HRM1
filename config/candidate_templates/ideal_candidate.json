@@ -1,0 +1,52 @@
+{
+  "template_name": "理想候选人",
+  "description": "技能优秀、性格平衡、经验丰富的理想候选人",
+  "profile": {
+    "name": "李明",
+    "skills": {
+      "python": 9,
+      "java": 8,
+      "react": 8,
+      "sql": 8,
+      "system_design": 9,
+      "leadership": 8,
+      "communication": 9,
+      "problem_solving": 9
+    },
+    "experience": {
+      "years": 7,
+      "level": "senior",
+      "projects": [
+        {
+          "name": "电商平台重构",
+          "role": "Tech Lead",
+          "duration": "12个月",
+          "tech_stack": ["Python", "Django", "React", "PostgreSQL"],
+          "achievement": "系统性能提升3倍，支持百万级用户"
+        },
+        {
+          "name": "微服务架构迁移",
+          "role": "架构师",
+          "duration": "8个月",
+          "tech_stack": ["Spring Boot", "Kubernetes", "Redis"],
+          "achievement": "成功将单体应用拆分为12个微服务"
+        }
+      ]
+    },
+    "personality": {
+      "communication": {
+        "verbose": 50,
+        "technical": 70
+      },
+      "response": {
+        "confidence": 85,
+        "detail_orientation": 80,
+        "storytelling": 75
+      },
+      "emotion": {
+        "nervousness": 15,
+        "enthusiasm": 80
+      }
+    }
+  }
+}

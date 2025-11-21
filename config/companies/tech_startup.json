@@ -1,0 +1,44 @@
+{
+  "company_id": "tech_startup_001",
+  "name": "创新科技有限公司",
+  "industry": "互联网/人工智能",
+  "size": "50-200人",
+  "stage": "B轮",
+  "location": "北京中关村",
+  
+  "description": "一家专注于AI赋能企业服务的创新公司，致力于用技术改变传统行业的工作方式。",
+  
+  "culture": {
+    "values": [
+      "创新驱动",
+      "用户至上",
+      "团队协作",
+      "持续学习"
+    ],
+    "work_style": "扁平化管理，弹性工作制",
+    "benefits": [
+      "有竞争力的薪资和期权",
+      "五险一金",
+      "弹性工作时间",
+      "技术图书和培训预算",
+      "年度团建活动",
+      "零食饮料供应"
+    ]
+  },
+  
+  "tech_stack": {
+    "backend": ["Python", "Java", "Go"],
+    "frontend": ["React", "Vue"],
+    "database": ["PostgreSQL", "MongoDB", "Redis"],
+    "infrastructure": ["AWS", "Kubernetes", "Docker"],
+    "ai_ml": ["TensorFlow", "PyTorch", "LangChain"]
+  },
+  
+  "team": {
+    "engineering_size": 30,
+    "team_structure": "按产品线划分，每个产品线4-6人",
+    "growth_opportunity": "快速成长的团队，有充分的晋升空间"
+  },
+  
+  "interview_style": "重视实际能力和潜力，注重文化匹配，面试氛围友好"
+}

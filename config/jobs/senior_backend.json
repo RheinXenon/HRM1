@@ -1,0 +1,54 @@
+{
+  "job_id": "senior_backend_001",
+  "title": "高级后端工程师",
+  "department": "技术部",
+  "location": "北京",
+  "employment_type": "全职",
+  "salary_range": "30K-50K",
+  
+  "description": "我们正在寻找一位经验丰富的高级后端工程师，负责核心业务系统的架构设计和开发。",
+  
+  "responsibilities": [
+    "负责公司核心业务系统的后端架构设计和开发",
+    "优化系统性能，确保高并发场景下的稳定性",
+    "指导初中级工程师，进行代码审查",
+    "参与技术选型和架构决策",
+    "与产品、前端团队协作，推动项目落地"
+  ],
+  
+  "requirements": {
+    "必备技能": {
+      "python": 7,
+      "java": 6,
+      "sql": 7,
+      "system_design": 7,
+      "api_design": 7,
+      "microservices": 6
+    },
+    "加分项": {
+      "kubernetes": 5,
+      "redis": 6,
+      "message_queue": 6,
+      "aws": 5
+    },
+    "软技能": {
+      "communication": 7,
+      "leadership": 6,
+      "problem_solving": 8,
+      "teamwork": 7
+    }
+  },
+  
+  "experience": {
+    "min_years": 5,
+    "preferred_level": "senior",
+    "industry": ["互联网", "电商", "金融科技"]
+  },
+  
+  "interview_focus": [
+    "系统架构设计能力",
+    "编程基础和算法",
+    "项目经验和问题解决能力",
+    "团队协作和沟通能力"
+  ]
+}

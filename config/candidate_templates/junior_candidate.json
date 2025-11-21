@@ -1,0 +1,51 @@
+{
+  "template_name": "初级新手",
+  "description": "技能基础、热情高、经验少但有潜力的初级候选人",
+  "profile": {
+    "name": "王小明",
+    "skills": {
+      "python": 5,
+      "javascript": 4,
+      "html_css": 6,
+      "sql": 4,
+      "git": 5,
+      "communication": 7,
+      "learning_ability": 8
+    },
+    "experience": {
+      "years": 1.5,
+      "level": "junior",
+      "projects": [
+        {
+          "name": "个人博客系统",
+          "role": "全栈开发",
+          "duration": "3个月",
+          "tech_stack": ["Flask", "Vue.js", "MySQL"],
+          "achievement": "实现基本CRUD功能和用户认证"
+        },
+        {
+          "name": "公司内部工具",
+          "role": "开发工程师",
+          "duration": "6个月",
+          "tech_stack": ["Python", "Django", "Bootstrap"],
+          "achievement": "协助开发报表系统"
+        }
+      ]
+    },
+    "personality": {
+      "communication": {
+        "verbose": 60,
+        "technical": 50
+      },
+      "response": {
+        "confidence": 60,
+        "detail_orientation": 65,
+        "storytelling": 55
+      },
+      "emotion": {
+        "nervousness": 40,
+        "enthusiasm": 90
+      }
+    }
+  }
+}

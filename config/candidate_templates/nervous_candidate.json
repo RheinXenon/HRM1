@@ -1,0 +1,51 @@
+{
+  "template_name": "紧张型候选人",
+  "description": "能力可以、但表达犹豫、信心不足的候选人",
+  "profile": {
+    "name": "张静",
+    "skills": {
+      "python": 7,
+      "react": 6,
+      "sql": 7,
+      "api_design": 6,
+      "testing": 7,
+      "communication": 5,
+      "presentation": 4
+    },
+    "experience": {
+      "years": 4,
+      "level": "mid",
+      "projects": [
+        {
+          "name": "数据分析平台",
+          "role": "后端开发",
+          "duration": "10个月",
+          "tech_stack": ["Python", "Flask", "MongoDB"],
+          "achievement": "负责API开发和数据处理模块"
+        },
+        {
+          "name": "用户管理系统",
+          "role": "全栈开发",
+          "duration": "6个月",
+          "tech_stack": ["Django", "React", "PostgreSQL"],
+          "achievement": "独立完成用户权限模块"
+        }
+      ]
+    },
+    "personality": {
+      "communication": {
+        "verbose": 70,
+        "technical": 60
+      },
+      "response": {
+        "confidence": 45,
+        "detail_orientation": 75,
+        "storytelling": 50
+      },
+      "emotion": {
+        "nervousness": 75,
+        "enthusiasm": 60
+      }
+    }
+  }
+}
