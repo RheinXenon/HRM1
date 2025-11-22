@@ -61,7 +61,10 @@ ANSWER_EVALUATION_PROMPT = """请评估候选人的回答质量。
   "follow_up_direction": "追问建议（如果需要追问）"
 }}
 
-重要：请务必使用上述英文字段名，score必须是1-10之间的数字。
+重要要求：
+1. 字段名（keys）必须使用英文，如上所示
+2. feedback 和 follow_up_direction 的内容必须用中文书写
+3. score 必须是1-10之间的数字
 """
 
 FOLLOW_UP_PROMPT = """基于候选人的回答，生成一个追问问题。
@@ -95,5 +98,8 @@ FINAL_REPORT_PROMPT = """基于整场面试，生成最终评估报告。
   "summary": "总结性评价（100-150字）"
 }}
 
-重要：请务必使用上述英文字段名，不要使用中文字段名。
+重要要求：
+1. JSON字段名（keys）必须使用英文，如上所示
+2. 所有字段的内容值（values）必须使用中文书写
+3. 包括 strengths、improvements、cultural_fit、summary 等所有文字内容都必须用中文
 """
