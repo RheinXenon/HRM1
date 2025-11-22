@@ -187,20 +187,35 @@ class InterviewEngine:
             })
             
             # ===== 追问机制 =====
-            # 检测回答是否可疑（浮于表面）
+            # 优先使用LLM评估结果判断是否需要追问
+            confidence_level = evaluation.get("confidence_level", "genuine")
+            need_followup_by_llm = evaluation.get("need_follow_up", "no").lower() == "yes"
+            
+            # 同时使用规则检测作为辅助
             detection = interviewer.detect_shallow_answer(
                 answer=answer,
                 target_skills=question.expected_skills,
                 score=score
             )
             
-            if detection["is_suspicious"] and score >= 7:
-                # 生成追问问题
-                followup_skill = detection["followup_skill"] or "技术细节"
+            # 综合判断：LLM判定过度自信 或 规则检测可疑且得分较高
+            # 降低门槛：只要可疑度>= 3分或LLM认为需追问，就追问
+            should_followup = (
+                (confidence_level == "overconfident" and need_followup_by_llm) or
+                (detection["is_suspicious"] and score >= 5) or
+                (detection.get("suspicion_score", 0) >= 3 and score >= 6)
+            )
+            
+            if should_followup:
+                # 确定追问的技能点
+                followup_skill = detection["followup_skill"] or question.expected_skills[0] if question.expected_skills else "技术细节"
+                
+                # 使用改进的LLM追问生成
                 followup_question = interviewer.generate_followup_question(
                     skill=followup_skill,
                     original_question=question_text,
-                    original_answer=answer
+                    original_answer=answer,
+                    evaluation=evaluation
                 )
                 
                 print(f"\n🔍 [追问环节]")

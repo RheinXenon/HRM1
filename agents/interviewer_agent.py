@@ -177,57 +177,95 @@ class InterviewerAgent:
         """
         signals = []
         suspicious = False
+        suspicion_score = 0  # 可疑程度评分，用于更精准的判断
         
         # 信号1：使用高级术语但缺乏具体细节
         high_level_terms = ["微服务", "分布式", "高并发", "架构", "system design", 
                            "性能优化", "react", "hooks", "虚拟dom", "jvm", "spring",
-                           "saga", "hystrix", "eureka", "feign", "kubernetes"]
+                           "saga", "hystrix", "eureka", "feign", "kubernetes", "容器",
+                           "缓存", "消息队列", "负载均衡", "熔断", "降级"]
         has_high_level_term = any(term in answer.lower() for term in high_level_terms)
+        high_level_count = sum(1 for term in high_level_terms if term in answer.lower())
         
         # 信号2：使用模糊词汇
-        vague_words = ["一般", "常用", "基本上", "差不多", "大概", "应该", "可能"]
+        vague_words = ["一般", "常用", "基本上", "差不多", "大概", "应该", "可能", "好像", "似乎"]
         vague_count = sum(1 for word in vague_words if word in answer)
         
-        # 信号3：露怯关键词（新增！）
+        # 信号3：露怯关键词
         weakness_indicators = ["记不太清", "不太记得", "具体的记不住", "记不清楚了", 
-                              "这块不太熟", "不太确定", "了解不够深入", "具体参数记不清"]
+                              "这块不太熟", "不太确定", "了解不够深入", "具体参数记不清",
+                              "忘记了", "想不起来", "不太了解"]
         has_weakness = any(phrase in answer for phrase in weakness_indicators)
         
-        # 信号4：回答太短（少于80字但得分高）
+        # 信号4：回答长度分析
         answer_length = len(answer)
-        is_too_short = answer_length < 80 and score >= 7
+        is_too_short = answer_length < 100 and score >= 7
+        is_very_short = answer_length < 60 and score >= 6
         
-        # 信号5：没有数据/数字（对于技术问题很可疑）
+        # 信号5：缺少具体内容
         has_numbers = any(char.isdigit() for char in answer)
+        has_example = any(word in answer for word in ["例如", "比如", "举个例子", "具体来说", "代码", "实现"])
+        has_metrics = any(word in answer for word in ["qps", "tps", "并发", "延迟", "响应时间", "吞吐量", "ms", "秒"])
         
-        # 信号6：没有具体例子或代码
-        has_example = any(word in answer for word in ["例如", "比如", "举个例子", "具体", "代码"])
+        # 信号6：空话套话
+        empty_phrases = ["我觉得", "我认为", "非常重要", "很有必要", "需要注意", "应该考虑"]
+        empty_count = sum(1 for phrase in empty_phrases if phrase in answer)
         
-        # 综合判断
+        # === 综合判断逻辑（改进版）===
+        
+        # 1. 高级术语但缺乏深度（强信号）
         if has_high_level_term and answer_length < 200:
-            signals.append("使用高级术语但回答不够详细")
-            suspicious = True
+            if not has_numbers and not has_example:
+                signals.append("使用高级术语但缺乏具体细节")
+                suspicion_score += 3
         
-        if vague_count >= 2:
-            signals.append(f"使用{vague_count}个模糊词汇")
-            suspicious = True
+        # 2. 多个高级术语但回答很短（强信号）
+        if high_level_count >= 3 and answer_length < 150:
+            signals.append(f"提到{high_level_count}个技术概念但回答过短")
+            suspicion_score += 2
         
-        if is_too_short:
+        # 3. 模糊词汇过多（中等信号）
+        if vague_count >= 3:
+            signals.append(f"使用{vague_count}个不确定词汇")
+            suspicion_score += 2
+        elif vague_count >= 2 and answer_length < 150:
+            signals.append(f"回答短且使用{vague_count}个模糊词")
+            suspicion_score += 1
+        
+        # 4. 回答过短但得分高（强信号）
+        if is_very_short:
             signals.append(f"回答仅{answer_length}字但得分{score}分")
-            suspicious = True
+            suspicion_score += 3
+        elif is_too_short:
+            signals.append(f"回答较短（{answer_length}字）")
+            suspicion_score += 1
         
-        if has_high_level_term and not has_numbers and score >= 7:
-            signals.append("提到技术概念但无具体数据")
-            suspicious = True
+        # 5. 提到技术但无具体数据（中等信号）
+        if has_high_level_term and not has_numbers and not has_metrics and score >= 7:
+            signals.append("提到技术概念但缺少量化指标")
+            suspicion_score += 2
         
-        if has_high_level_term and not has_example and answer_length < 120:
-            signals.append("缺乏具体示例")
-            suspicious = True
+        # 6. 缺乏具体示例（中等信号）
+        if has_high_level_term and not has_example and answer_length < 150:
+            signals.append("缺乏具体示例或代码说明")
+            suspicion_score += 2
         
-        # 最重要：如果明确表现出知识深度不足
-        if has_weakness and score >= 6:
-            signals.append("承认知识有限或记不清细节")
-            suspicious = True
+        # 7. 明确承认不熟悉（强信号）
+        if has_weakness:
+            if score >= 6:
+                signals.append("承认知识有限但仍给出回答")
+                suspicion_score += 3
+            else:
+                signals.append("承认对该领域不够熟悉")
+                suspicion_score += 1
+        
+        # 8. 空话套话多（轻信号）
+        if empty_count >= 3 and answer_length < 200:
+            signals.append("包含较多空话套话")
+            suspicion_score += 1
+        
+        # 最终判断：suspicion_score >= 4 认为可疑
+        suspicious = suspicion_score >= 4
         
         # 确定建议追问的技能
         followup_skill = None
@@ -244,103 +282,118 @@ class InterviewerAgent:
             "is_suspicious": suspicious,
             "signals": signals,
             "signal_count": len(signals),
+            "suspicion_score": suspicion_score,
             "followup_skill": followup_skill,
             "answer_length": answer_length,
             "has_weakness_indicator": has_weakness
         }
         
         if suspicious:
-            logger.warning(f"⚠️  检测到可疑回答: {', '.join(signals)}")
+            logger.warning(f"⚠️  检测到可疑回答 (可疑度{suspicion_score}): {', '.join(signals)}")
         
         return result
     
-    def generate_followup_question(self, skill: str, original_question: str, original_answer: str) -> str:
+    def generate_followup_question(
+        self, 
+        skill: str, 
+        original_question: str, 
+        original_answer: str, 
+        evaluation: Dict = None
+    ) -> str:
         """
-        生成针对特定技能的追问问题
+        使用LLM智能生成针对特定技能的追问问题
         
         Args:
             skill: 目标技能
             original_question: 原始问题
             original_answer: 原始回答
+            evaluation: 评估结果（可选）
             
         Returns:
             追问问题
         """
-        # 追问问题库（针对不同技能）
-        followup_templates = {
-            "system_design": [
-                "你提到了{concept}，能具体说说这个方案能支持多大的并发量（QPS）吗？",
-                "如果让你画个架构图来说明{concept}，你会怎么画？请描述主要模块和数据流。",
-                "这个{concept}设计在实际项目中遇到过什么具体问题？是怎么解决的？",
-                "能否说明一下{concept}方案的trade-off？为什么选择它而不是其他方案？"
-            ],
-            "微服务": [
-                "你提到使用了{concept}，具体是用的什么中间件或框架？",
-                "服务之间的数据一致性是如何保证的？能举个具体例子吗？",
-                "如果一个服务挂了，整个系统会怎么处理？有什么降级策略？"
-            ],
-            "react": [
-                "你提到React的{concept}，能写一小段代码示例来说明吗？",
-                "React的{concept}底层原理是什么？和其他框架有什么本质区别？",
-                "如果我问你virtual DOM的diff算法时间复杂度，你知道吗？",
-                "在实际项目中使用{concept}时遇到过什么性能问题？"
-            ],
-            "java": [
-                "你提到{concept}，能说说JVM的具体参数配置吗？",
-                "Spring的{concept}源码你看过吗？能简单说说实现原理吗？",
-                "在生产环境中{concept}的监控指标你会看哪些？"
-            ],
-            "performance": [
-                "你提到性能优化，具体优化前后的指标是多少？",
-                "这个优化方案的瓶颈分析是怎么做的？用了什么工具？",
-                "如果数据量增长10倍，这个方案还能work吗？"
-            ],
-            "database": [
-                "你提到数据库优化，能说说具体的索引设计吗？",
-                "执行计划（EXPLAIN）结果你是怎么分析的？",
-                "这个查询的时间复杂度是多少？数据量多大时会成为瓶颈？"
-            ]
-        }
+        logger.info(f"🔍 正在生成针对'{skill}'的智能追问...")
         
-        # 提取原始回答中的关键概念
-        concepts = []
-        keywords = ["微服务", "saga", "分布式", "hooks", "性能优化", "缓存", 
-                   "消息队列", "架构", "jvm", "spring"]
-        for keyword in keywords:
-            if keyword in original_answer.lower():
-                concepts.append(keyword)
+        # 构建系统提示词
+        system_prompt = self._build_system_prompt()
         
-        concept = concepts[0] if concepts else "这个方案"
-        
-        # 根据技能选择追问模板
-        skill_lower = skill.lower()
-        if "design" in skill_lower or "架构" in skill_lower:
-            templates = followup_templates["system_design"]
-        elif "react" in skill_lower or "前端" in skill_lower:
-            templates = followup_templates["react"]
-        elif "java" in skill_lower:
-            templates = followup_templates["java"]
-        elif "微服务" in skill_lower or "microservice" in skill_lower:
-            templates = followup_templates["微服务"]
-        elif "性能" in skill_lower or "performance" in skill_lower:
-            templates = followup_templates["performance"]
-        elif "数据库" in skill_lower or "sql" in skill_lower:
-            templates = followup_templates["database"]
+        # 准备评估反馈
+        eval_feedback = ""
+        if evaluation:
+            eval_feedback = f"评分: {evaluation.get('score', 0)}/10\n"
+            eval_feedback += f"反馈: {evaluation.get('feedback', '')}\n"
+            eval_feedback += f"信心水平: {evaluation.get('confidence_level', 'unknown')}\n"
+            eval_feedback += f"追问方向: {evaluation.get('follow_up_direction', '')}"
         else:
-            # 默认通用追问
-            templates = [
-                "能举一个具体的代码示例或者项目案例来说明吗？",
-                "如果遇到{concept}的边界情况或异常，你会怎么处理？",
-                "这个{concept}的实现细节能展开说说吗？"
-            ]
+            eval_feedback = "候选人回答似乎缺乏深度，需要验证真实能力"
         
-        # 随机选择一个模板
+        # 使用FOLLOW_UP_PROMPT生成追问
+        user_message = FOLLOW_UP_PROMPT.format(
+            original_question=original_question,
+            answer=original_answer,
+            evaluation=eval_feedback,
+            target_skill=skill
+        )
+        
+        try:
+            # 调用LLM生成追问问题
+            followup_question = self.llm_client.chat_with_system_prompt(
+                system_prompt=system_prompt,
+                user_message=user_message,
+                temperature=0.7  # 适度创造性
+            )
+            
+            # 清理可能的多余内容
+            followup_question = followup_question.strip()
+            # 如果LLM返回了解释性文字，只保留问题部分
+            if '\n' in followup_question:
+                # 取第一个问句
+                lines = [line.strip() for line in followup_question.split('\n') if line.strip()]
+                for line in lines:
+                    if '?' in line or '？' in line or line.endswith('吗') or line.endswith('呢'):
+                        followup_question = line
+                        break
+                else:
+                    followup_question = lines[0] if lines else followup_question
+            
+            logger.success(f"✅ 智能追问生成: {followup_question[:50]}...")
+            return followup_question
+            
+        except Exception as e:
+            logger.error(f"❌ LLM追问生成失败: {e}，使用备用模板")
+            # 降级到简单模板
+            return self._generate_fallback_followup(skill, original_answer)
+    
+    def _generate_fallback_followup(self, skill: str, original_answer: str) -> str:
+        """
+        生成备用追问问题（当LLM失败时使用）
+        
+        Args:
+            skill: 目标技能
+            original_answer: 原始回答
+            
+        Returns:
+            备用追问问题
+        """
+        # 提取回答中的技术概念
+        tech_terms = []
+        keywords = ["微服务", "分布式", "架构", "性能", "优化", "缓存", 
+                   "数据库", "算法", "框架", "设计模式"]
+        for keyword in keywords:
+            if keyword in original_answer:
+                tech_terms.append(keyword)
+        
+        concept = tech_terms[0] if tech_terms else skill
+        
+        # 简单但有效的追问模板
+        fallback_questions = [
+            f"你提到了{concept}，能具体说说实际项目中的应用场景和遇到的问题吗？",
+            f"关于{concept}，能展开讲讲具体的技术细节或实现方案吗？",
+            f"在使用{concept}时，你是如何保证性能和稳定性的？有具体的指标吗？"
+        ]
+        
         import random
-        template = random.choice(templates)
-        question = template.format(concept=concept)
-        
-        logger.info(f"🔍 生成追问: {question}")
-        return question
+        return random.choice(fallback_questions)
     
     def decide_follow_up(self, evaluation: Dict, original_question: str = None, answer: str = None) -> Optional[str]:
         """
@@ -360,10 +413,9 @@ class InterviewerAgent:
         if need_follow_up != "yes":
             return None
         
-        # Phase 1: 简化版，不进行复杂追问
-        # Phase 2 可以添加更智能的追问逻辑
-        logger.info("评估结果显示需要追问，但Phase 1版本暂不实现追问")
-        return None
+        # Phase 2: 实现智能追问（已启用）
+        logger.info("评估结果显示需要追问，准备生成追问问题...")
+        return None  # 注意：实际追问在interview_engine中处理
     
     def generate_final_report(self, candidate_name: str) -> Dict[str, Any]:
         """
