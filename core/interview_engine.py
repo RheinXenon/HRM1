@@ -185,6 +185,89 @@ class InterviewEngine:
                 "role": "system",
                 "content": f"评分: {score}/10"
             })
+            
+            # ===== 追问机制 =====
+            # 检测回答是否可疑（浮于表面）
+            detection = interviewer.detect_shallow_answer(
+                answer=answer,
+                target_skills=question.expected_skills,
+                score=score
+            )
+            
+            if detection["is_suspicious"] and score >= 7:
+                # 生成追问问题
+                followup_skill = detection["followup_skill"] or "技术细节"
+                followup_question = interviewer.generate_followup_question(
+                    skill=followup_skill,
+                    original_question=question_text,
+                    original_answer=answer
+                )
+                
+                print(f"\n🔍 [追问环节]")
+                print(f"👔 面试官: {followup_question}")
+                
+                conversation_log.append({
+                    "role": "interviewer",
+                    "content": followup_question,
+                    "type": "followup",
+                    "reason": f"检测到可疑信号: {', '.join(detection['signals'])}"
+                })
+                
+                # 候选人回答追问
+                followup_answer = candidate.answer_question(
+                    question=followup_question,
+                    question_context={
+                        "category": question.category,
+                        "expected_skills": question.expected_skills,
+                        "is_followup": True
+                    }
+                )
+                print(f"\n👤 {candidate_profile.name}: {followup_answer}")
+                
+                conversation_log.append({
+                    "role": "candidate",
+                    "content": followup_answer,
+                    "type": "followup_answer"
+                })
+                
+                # 重新评估追问后的回答
+                followup_evaluation = interviewer.evaluate_answer(
+                    question=followup_question,
+                    answer=followup_answer,
+                    target_skills=question.expected_skills
+                )
+                
+                followup_score = followup_evaluation.get("score", 0)
+                
+                # 比较前后评分
+                score_drop = score - followup_score
+                if score_drop >= 2:
+                    # 追问后分数下降明显，说明确实不懂装懂
+                    final_score = followup_score
+                    flag = "🚩 追问后露怯"
+                    print(f"\n📊 [追问评分: {followup_score}/10] {flag}")
+                    print(f"⚠️  评分从 {score} 降至 {followup_score}，怀疑不懂装懂")
+                elif followup_score >= score:
+                    # 追问后回答依然好，可能确实懂
+                    final_score = followup_score
+                    flag = "✅ 追问后依然扎实"
+                    print(f"\n📊 [追问评分: {followup_score}/10] {flag}")
+                else:
+                    # 轻微下降，取平均
+                    final_score = (score + followup_score) / 2
+                    flag = "⚡ 追问后略有下降"
+                    print(f"\n📊 [追问评分: {followup_score}/10] {flag}")
+                
+                conversation_log.append({
+                    "role": "system",
+                    "content": f"追问评分: {followup_score}/10, 最终: {final_score}/10, 标记: {flag}"
+                })
+                
+                # 更新评估分数
+                evaluation["score"] = final_score
+                evaluation["original_score"] = score
+                evaluation["followup_score"] = followup_score
+                evaluation["followup_flag"] = flag
         
         # 7. 候选人提问
         logger.info("\n❔ 步骤6: 候选人提问环节...")

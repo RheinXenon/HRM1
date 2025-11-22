@@ -163,6 +163,173 @@ class InterviewerAgent:
                 "need_follow_up": "no"
             }
     
+    def detect_shallow_answer(self, answer: str, target_skills: List[str], score: int) -> Dict[str, Any]:
+        """
+        检测回答是否浮于表面（可能是不懂装懂）
+        
+        Args:
+            answer: 候选人回答
+            target_skills: 目标技能列表
+            score: 评分
+            
+        Returns:
+            检测结果，包含是否可疑、可疑信号、建议追问的技能
+        """
+        signals = []
+        suspicious = False
+        
+        # 信号1：使用高级术语但缺乏具体细节
+        high_level_terms = ["微服务", "分布式", "高并发", "架构", "system design", 
+                           "性能优化", "react", "hooks", "虚拟dom", "jvm", "spring"]
+        has_high_level_term = any(term in answer.lower() for term in high_level_terms)
+        
+        # 信号2：使用模糊词汇
+        vague_words = ["一般", "常用", "基本上", "差不多", "大概", "应该", "可能"]
+        vague_count = sum(1 for word in vague_words if word in answer)
+        
+        # 信号3：回答太短（少于80字但得分高）
+        answer_length = len(answer)
+        is_too_short = answer_length < 80 and score >= 7
+        
+        # 信号4：没有数据/数字（对于技术问题很可疑）
+        has_numbers = any(char.isdigit() for char in answer)
+        
+        # 信号5：没有具体例子或代码
+        has_example = any(word in answer for word in ["例如", "比如", "举个例子", "具体", "代码"])
+        
+        # 综合判断
+        if has_high_level_term and answer_length < 150:
+            signals.append("使用高级术语但回答较短")
+            suspicious = True
+        
+        if vague_count >= 2:
+            signals.append(f"使用{vague_count}个模糊词汇")
+            suspicious = True
+        
+        if is_too_short:
+            signals.append(f"回答仅{answer_length}字但得分{score}分")
+            suspicious = True
+        
+        if has_high_level_term and not has_numbers and score >= 7:
+            signals.append("提到技术概念但无具体数据")
+            suspicious = True
+        
+        if has_high_level_term and not has_example and answer_length < 100:
+            signals.append("缺乏具体示例")
+            suspicious = True
+        
+        # 确定建议追问的技能
+        followup_skill = None
+        if suspicious and target_skills:
+            # 找出回答中提到的技能
+            for skill in target_skills:
+                if skill.lower() in answer.lower():
+                    followup_skill = skill
+                    break
+            if not followup_skill:
+                followup_skill = target_skills[0] if target_skills else None
+        
+        result = {
+            "is_suspicious": suspicious,
+            "signals": signals,
+            "signal_count": len(signals),
+            "followup_skill": followup_skill,
+            "answer_length": answer_length
+        }
+        
+        if suspicious:
+            logger.warning(f"⚠️  检测到可疑回答: {', '.join(signals)}")
+        
+        return result
+    
+    def generate_followup_question(self, skill: str, original_question: str, original_answer: str) -> str:
+        """
+        生成针对特定技能的追问问题
+        
+        Args:
+            skill: 目标技能
+            original_question: 原始问题
+            original_answer: 原始回答
+            
+        Returns:
+            追问问题
+        """
+        # 追问问题库（针对不同技能）
+        followup_templates = {
+            "system_design": [
+                "你提到了{concept}，能具体说说这个方案能支持多大的并发量（QPS）吗？",
+                "如果让你画个架构图来说明{concept}，你会怎么画？请描述主要模块和数据流。",
+                "这个{concept}设计在实际项目中遇到过什么具体问题？是怎么解决的？",
+                "能否说明一下{concept}方案的trade-off？为什么选择它而不是其他方案？"
+            ],
+            "微服务": [
+                "你提到使用了{concept}，具体是用的什么中间件或框架？",
+                "服务之间的数据一致性是如何保证的？能举个具体例子吗？",
+                "如果一个服务挂了，整个系统会怎么处理？有什么降级策略？"
+            ],
+            "react": [
+                "你提到React的{concept}，能写一小段代码示例来说明吗？",
+                "React的{concept}底层原理是什么？和其他框架有什么本质区别？",
+                "如果我问你virtual DOM的diff算法时间复杂度，你知道吗？",
+                "在实际项目中使用{concept}时遇到过什么性能问题？"
+            ],
+            "java": [
+                "你提到{concept}，能说说JVM的具体参数配置吗？",
+                "Spring的{concept}源码你看过吗？能简单说说实现原理吗？",
+                "在生产环境中{concept}的监控指标你会看哪些？"
+            ],
+            "performance": [
+                "你提到性能优化，具体优化前后的指标是多少？",
+                "这个优化方案的瓶颈分析是怎么做的？用了什么工具？",
+                "如果数据量增长10倍，这个方案还能work吗？"
+            ],
+            "database": [
+                "你提到数据库优化，能说说具体的索引设计吗？",
+                "执行计划（EXPLAIN）结果你是怎么分析的？",
+                "这个查询的时间复杂度是多少？数据量多大时会成为瓶颈？"
+            ]
+        }
+        
+        # 提取原始回答中的关键概念
+        concepts = []
+        keywords = ["微服务", "saga", "分布式", "hooks", "性能优化", "缓存", 
+                   "消息队列", "架构", "jvm", "spring"]
+        for keyword in keywords:
+            if keyword in original_answer.lower():
+                concepts.append(keyword)
+        
+        concept = concepts[0] if concepts else "这个方案"
+        
+        # 根据技能选择追问模板
+        skill_lower = skill.lower()
+        if "design" in skill_lower or "架构" in skill_lower:
+            templates = followup_templates["system_design"]
+        elif "react" in skill_lower or "前端" in skill_lower:
+            templates = followup_templates["react"]
+        elif "java" in skill_lower:
+            templates = followup_templates["java"]
+        elif "微服务" in skill_lower or "microservice" in skill_lower:
+            templates = followup_templates["微服务"]
+        elif "性能" in skill_lower or "performance" in skill_lower:
+            templates = followup_templates["performance"]
+        elif "数据库" in skill_lower or "sql" in skill_lower:
+            templates = followup_templates["database"]
+        else:
+            # 默认通用追问
+            templates = [
+                "能举一个具体的代码示例或者项目案例来说明吗？",
+                "如果遇到{concept}的边界情况或异常，你会怎么处理？",
+                "这个{concept}的实现细节能展开说说吗？"
+            ]
+        
+        # 随机选择一个模板
+        import random
+        template = random.choice(templates)
+        question = template.format(concept=concept)
+        
+        logger.info(f"🔍 生成追问: {question}")
+        return question
+    
     def decide_follow_up(self, evaluation: Dict, original_question: str = None, answer: str = None) -> Optional[str]:
         """
         决策是否需要追问，并生成追问问题
