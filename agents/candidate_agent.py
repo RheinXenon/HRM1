@@ -96,6 +96,7 @@ class CandidateAgent:
         # 获取问题相关信息
         question_category = question_context.get("category", "未知")
         related_skills = question_context.get("expected_skills", [])
+        is_followup = question_context.get("is_followup", False)
         
         # 构建系统提示词
         system_prompt = self._build_system_prompt()
@@ -107,11 +108,34 @@ class CandidateAgent:
             related_skills=", ".join(related_skills) if related_skills else "综合能力"
         )
         
+        # 如果是追问，添加提示
+        if is_followup:
+            user_message += "\n\n**这是一个追问问题！** 面试官在深入挖掘你的理解。请基于你之前的回答和真实能力水平来回答。"
+        
         try:
-            # 调用LLM生成回答
-            answer = self.llm_client.chat_with_system_prompt(
-                system_prompt=system_prompt,
-                user_message=user_message,
+            # 构建完整的对话历史
+            messages = [{"role": "system", "content": system_prompt}]
+            
+            # 添加之前的对话历史（最近5轮，避免上下文过长）
+            recent_history = self.conversation_history[-10:]  # 5轮=10条消息
+            for entry in recent_history:
+                if entry.get("type") == "question":
+                    messages.append({
+                        "role": "user",
+                        "content": f"[面试官提问] {entry['content']}"
+                    })
+                elif entry.get("type") == "answer":
+                    messages.append({
+                        "role": "assistant",
+                        "content": entry['content']
+                    })
+            
+            # 添加当前问题
+            messages.append({"role": "user", "content": user_message})
+            
+            # 调用LLM生成回答（使用完整对话历史）
+            answer = self.llm_client.chat_completion(
+                messages=messages,
                 temperature=0.8
             )
             
@@ -128,7 +152,7 @@ class CandidateAgent:
                 "content": answer
             })
             
-            logger.success(f"✅ 回答生成成功")
+            logger.success(f"✅ 回答生成成功 (上下文: {len(messages)}条消息)")
             return answer.strip()
             
         except Exception as e:

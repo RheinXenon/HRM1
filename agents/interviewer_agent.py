@@ -180,26 +180,32 @@ class InterviewerAgent:
         
         # 信号1：使用高级术语但缺乏具体细节
         high_level_terms = ["微服务", "分布式", "高并发", "架构", "system design", 
-                           "性能优化", "react", "hooks", "虚拟dom", "jvm", "spring"]
+                           "性能优化", "react", "hooks", "虚拟dom", "jvm", "spring",
+                           "saga", "hystrix", "eureka", "feign", "kubernetes"]
         has_high_level_term = any(term in answer.lower() for term in high_level_terms)
         
         # 信号2：使用模糊词汇
         vague_words = ["一般", "常用", "基本上", "差不多", "大概", "应该", "可能"]
         vague_count = sum(1 for word in vague_words if word in answer)
         
-        # 信号3：回答太短（少于80字但得分高）
+        # 信号3：露怯关键词（新增！）
+        weakness_indicators = ["记不太清", "不太记得", "具体的记不住", "记不清楚了", 
+                              "这块不太熟", "不太确定", "了解不够深入", "具体参数记不清"]
+        has_weakness = any(phrase in answer for phrase in weakness_indicators)
+        
+        # 信号4：回答太短（少于80字但得分高）
         answer_length = len(answer)
         is_too_short = answer_length < 80 and score >= 7
         
-        # 信号4：没有数据/数字（对于技术问题很可疑）
+        # 信号5：没有数据/数字（对于技术问题很可疑）
         has_numbers = any(char.isdigit() for char in answer)
         
-        # 信号5：没有具体例子或代码
+        # 信号6：没有具体例子或代码
         has_example = any(word in answer for word in ["例如", "比如", "举个例子", "具体", "代码"])
         
         # 综合判断
-        if has_high_level_term and answer_length < 150:
-            signals.append("使用高级术语但回答较短")
+        if has_high_level_term and answer_length < 200:
+            signals.append("使用高级术语但回答不够详细")
             suspicious = True
         
         if vague_count >= 2:
@@ -214,8 +220,13 @@ class InterviewerAgent:
             signals.append("提到技术概念但无具体数据")
             suspicious = True
         
-        if has_high_level_term and not has_example and answer_length < 100:
+        if has_high_level_term and not has_example and answer_length < 120:
             signals.append("缺乏具体示例")
+            suspicious = True
+        
+        # 最重要：如果明确表现出知识深度不足
+        if has_weakness and score >= 6:
+            signals.append("承认知识有限或记不清细节")
             suspicious = True
         
         # 确定建议追问的技能
@@ -234,7 +245,8 @@ class InterviewerAgent:
             "signals": signals,
             "signal_count": len(signals),
             "followup_skill": followup_skill,
-            "answer_length": answer_length
+            "answer_length": answer_length,
+            "has_weakness_indicator": has_weakness
         }
         
         if suspicious:
