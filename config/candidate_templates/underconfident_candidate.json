@@ -1,0 +1,78 @@
+{
+  "template_name": "过度谦虚候选人",
+  "description": "高自知之明，容易低估自己能力的候选人",
+  "profile": {
+    "name": "王静",
+    "skills": {
+      "python": 8,
+      "java": 7,
+      "react": 7,
+      "sql": 8,
+      "system_design": 8,
+      "leadership": 6,
+      "communication": 7,
+      "problem_solving": 8
+    },
+    "experience": {
+      "years": 6,
+      "level": "senior",
+      "projects": [
+        {
+          "name": "电商平台架构升级",
+          "role": "核心开发",
+          "duration": "10个月",
+          "tech_stack": ["Python", "Django", "React", "Redis", "PostgreSQL"],
+          "achievement": "主导系统重构，性能提升5倍"
+        },
+        {
+          "name": "实时数据处理系统",
+          "role": "技术负责人",
+          "duration": "8个月",
+          "tech_stack": ["Java", "Kafka", "Flink", "Elasticsearch"],
+          "achievement": "设计并实现高并发数据处理架构"
+        }
+      ]
+    },
+    "personality": {
+      "communication": {
+        "verbose": 45,
+        "technical": 75
+      },
+      "response": {
+        "confidence": 50,
+        "detail_orientation": 85,
+        "storytelling": 60
+      },
+      "emotion": {
+        "nervousness": 55,
+        "enthusiasm": 65
+      },
+      "self_perception": {
+        "self_awareness": 85
+      }
+    },
+    "knowledge_blind_spots": {
+      "overconfident_areas": [],
+      "underconfident_areas": [
+        {
+          "skill": "system_design",
+          "actual_level": 8,
+          "perceived_level": 6,
+          "description": "实际上有丰富的大规模系统设计经验，但总觉得自己理解不够深入，容易说'我不太确定'、'可能需要更多学习'"
+        },
+        {
+          "skill": "leadership",
+          "actual_level": 6,
+          "perceived_level": 4,
+          "description": "实际带过团队并取得良好成果，但会过度谦虚说'我只是协调了一下'、'主要是团队的功劳'"
+        },
+        {
+          "skill": "react",
+          "actual_level": 7,
+          "perceived_level": 5,
+          "description": "有扎实的React项目经验，但面对高级话题会说'我只是用过，谈不上精通'"
+        }
+      ]
+    }
+  }
+}

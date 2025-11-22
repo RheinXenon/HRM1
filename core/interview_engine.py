@@ -94,7 +94,8 @@ class InterviewEngine:
             name=profile_data.get("name", "未知"),
             skills=profile_data.get("skills", {}),
             experience=profile_data.get("experience", {}),
-            personality=profile_data.get("personality", {})
+            personality=profile_data.get("personality", {}),
+            knowledge_blind_spots=profile_data.get("knowledge_blind_spots", None)
         )
         
         # 创建候选人Agent

@@ -1,0 +1,78 @@
+{
+  "template_name": "过度自信候选人",
+  "description": "低自知之明，容易不懂装懂的候选人",
+  "profile": {
+    "name": "张强",
+    "skills": {
+      "python": 6,
+      "java": 4,
+      "react": 3,
+      "sql": 7,
+      "system_design": 5,
+      "leadership": 4,
+      "communication": 7,
+      "problem_solving": 6
+    },
+    "experience": {
+      "years": 4,
+      "level": "mid",
+      "projects": [
+        {
+          "name": "企业管理系统",
+          "role": "后端开发",
+          "duration": "8个月",
+          "tech_stack": ["Python", "Flask", "MySQL"],
+          "achievement": "完成核心业务模块开发"
+        },
+        {
+          "name": "数据分析平台",
+          "role": "全栈开发",
+          "duration": "6个月",
+          "tech_stack": ["Python", "Vue.js", "PostgreSQL"],
+          "achievement": "独立完成前后端开发"
+        }
+      ]
+    },
+    "personality": {
+      "communication": {
+        "verbose": 65,
+        "technical": 75
+      },
+      "response": {
+        "confidence": 85,
+        "detail_orientation": 50,
+        "storytelling": 60
+      },
+      "emotion": {
+        "nervousness": 20,
+        "enthusiasm": 80
+      },
+      "self_perception": {
+        "self_awareness": 30
+      }
+    },
+    "knowledge_blind_spots": {
+      "overconfident_areas": [
+        {
+          "skill": "system_design",
+          "actual_level": 5,
+          "perceived_level": 8,
+          "description": "对分布式系统、微服务架构等概念有基本了解，但缺乏大规模实战经验，容易高估自己的架构能力"
+        },
+        {
+          "skill": "react",
+          "actual_level": 3,
+          "perceived_level": 7,
+          "description": "只做过简单的React项目，但会过度自信地谈论hooks、性能优化等高级话题"
+        },
+        {
+          "skill": "java",
+          "actual_level": 4,
+          "perceived_level": 7,
+          "description": "只有基础Java经验，但会自信地谈论JVM调优、Spring源码等深层次话题"
+        }
+      ],
+      "underconfident_areas": []
+    }
+  }
+}

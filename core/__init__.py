@@ -7,5 +7,13 @@ from core.interview_engine import InterviewEngine
 from core.evaluation import EvaluationEngine
 from core.batch_runner import BatchRunner
 from core.llm_client import LLMClient
+from core.personality_generator import PersonalityGenerator, create_random_candidate_config
 
-__all__ = ['InterviewEngine', 'EvaluationEngine', 'BatchRunner', 'LLMClient']
+__all__ = [
+    'InterviewEngine', 
+    'EvaluationEngine', 
+    'BatchRunner', 
+    'LLMClient',
+    'PersonalityGenerator',
+    'create_random_candidate_config'
+]

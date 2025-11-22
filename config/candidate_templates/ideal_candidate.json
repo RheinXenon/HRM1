@@ -46,7 +46,14 @@
       "emotion": {
         "nervousness": 15,
         "enthusiasm": 80
+      },
+      "self_perception": {
+        "self_awareness": 70
       }
+    },
+    "knowledge_blind_spots": {
+      "overconfident_areas": [],
+      "underconfident_areas": []
     }
   }
 }

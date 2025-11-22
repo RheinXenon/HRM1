@@ -25,6 +25,7 @@ class CandidateProfile:
     skills: Dict[str, int]  # 技能名称 -> 等级(1-10)
     experience: Dict[str, Any]  # 经验信息
     personality: Dict[str, int]  # 性格特质参数
+    knowledge_blind_spots: Dict[str, list] = None  # 知识盲区
 
 
 class CandidateAgent:
@@ -216,6 +217,7 @@ class CandidateAgent:
         comm = personality.get("communication", {})
         resp = personality.get("response", {})
         emot = personality.get("emotion", {})
+        self_perc = personality.get("self_perception", {})
         
         verbose = comm.get("verbose", 50)
         technical = comm.get("technical", 50)
@@ -223,21 +225,63 @@ class CandidateAgent:
         nervousness = emot.get("nervousness", 20)
         storytelling = resp.get("storytelling", 50)
         enthusiasm = emot.get("enthusiasm", 70)
+        self_awareness = self_perc.get("self_awareness", 50)
+        
+        # 格式化知识盲区
+        knowledge_blind_spots = self._format_knowledge_blind_spots()
         
         # 构建完整提示词
         system_prompt = CANDIDATE_SYSTEM_PROMPT.format(
             skill_profile=skill_profile,
             work_experience=work_experience,
             personality_traits=personality_traits,
+            knowledge_blind_spots=knowledge_blind_spots,
             verbose=verbose,
             technical=technical,
             confidence=confidence,
             nervousness=nervousness,
             storytelling=storytelling,
-            enthusiasm=enthusiasm
+            enthusiasm=enthusiasm,
+            self_awareness=self_awareness
         )
         
         return system_prompt
+    
+    def _format_knowledge_blind_spots(self) -> str:
+        """格式化知识盲区描述"""
+        if not self.profile.knowledge_blind_spots:
+            return "无明显知识盲区（能够准确评估自己的能力）"
+        
+        blind_spots = self.profile.knowledge_blind_spots
+        overconfident = blind_spots.get("overconfident_areas", [])
+        underconfident = blind_spots.get("underconfident_areas", [])
+        
+        result = []
+        
+        if overconfident:
+            result.append("**过度自信领域（容易不懂装懂）:**")
+            for area in overconfident:
+                skill = area.get("skill", "未知")
+                actual = area.get("actual_level", 0)
+                perceived = area.get("perceived_level", 0)
+                desc = area.get("description", "")
+                result.append(f"- {skill}: 实际能力{actual}/10，自我感觉{perceived}/10")
+                result.append(f"  {desc}")
+        
+        if underconfident:
+            result.append("\n**过度谦虚领域（容易低估自己）:**")
+            for area in underconfident:
+                skill = area.get("skill", "未知")
+                actual = area.get("actual_level", 0)
+                perceived = area.get("perceived_level", 0)
+                desc = area.get("description", "")
+                result.append(f"- {skill}: 实际能力{actual}/10，自我感觉{perceived}/10")
+                result.append(f"  {desc}")
+        
+        if not result:
+            return "无明显知识盲区（能够准确评估自己的能力）"
+        
+        return "\n".join(result)
     
     def _apply_personality_style(self, base_answer: str) -> str:
         """
