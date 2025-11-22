@@ -3,6 +3,8 @@ LLM客户端 - 封装对Qwen API的调用
 """
 
 import os
+import time
+import sys
 from typing import List, Dict, Optional
 from openai import OpenAI
 from dotenv import load_dotenv
@@ -50,50 +52,76 @@ class LLMClient:
         messages: List[Dict[str, str]],
         temperature: float = 0.7,
         max_tokens: Optional[int] = None,
-        response_format: Optional[Dict] = None
+        response_format: Optional[Dict] = None,
+        max_retries: int = 3
     ) -> str:
         """
-        执行对话补全
+        执行对话补全（带重试机制）
         
         Args:
             messages: 消息列表，格式为 [{"role": "system/user/assistant", "content": "..."}]
             temperature: 温度参数，控制随机性
             max_tokens: 最大token数
             response_format: 响应格式，如 {"type": "json_object"}
+            max_retries: 最大重试次数，默认3次
             
         Returns:
             模型生成的响应文本
         """
-        try:
-            params = {
-                "model": self.model,
-                "messages": messages,
-                "temperature": temperature,
-            }
-            
-            if max_tokens:
-                params["max_tokens"] = max_tokens
-            
-            if response_format:
-                params["response_format"] = response_format
-            
-            response = self.client.chat.completions.create(**params)
-            
-            content = response.choices[0].message.content
-            
-            # 记录token使用情况
-            if hasattr(response, 'usage'):
-                logger.debug(
-                    f"Token使用: prompt={response.usage.prompt_tokens}, "
-                    f"completion={response.usage.completion_tokens}, "
-                    f"total={response.usage.total_tokens}"
-                )
-            
-            return content
-            
-        except Exception as e:
-            logger.error(f"❌ LLM调用失败: {e}")
-            raise
+        last_error = None
+        
+        for attempt in range(max_retries):
+            try:
+                params = {
+                    "model": self.model,
+                    "messages": messages,
+                    "temperature": temperature,
+                }
+                
+                if max_tokens:
+                    params["max_tokens"] = max_tokens
+                
+                if response_format:
+                    params["response_format"] = response_format
+                
+                response = self.client.chat.completions.create(**params)
+                
+                content = response.choices[0].message.content
+                
+                # 记录token使用情况
+                if hasattr(response, 'usage'):
+                    logger.debug(
+                        f"Token使用: prompt={response.usage.prompt_tokens}, "
+                        f"completion={response.usage.completion_tokens}, "
+                        f"total={response.usage.total_tokens}"
+                    )
+                
+                # 成功则返回
+                if attempt > 0:
+                    logger.info(f"✅ 重试成功（第{attempt + 1}次尝试）")
+                return content
+                
+            except Exception as e:
+                last_error = e
+                retry_num = attempt + 1
+                
+                if retry_num < max_retries:
+                    wait_time = 2 ** attempt  # 指数退避: 1s, 2s, 4s
+                    logger.warning(
+                        f"⚠️  API调用失败（第{retry_num}次尝试），{wait_time}秒后重试...\n"
+                        f"   错误: {str(e)}"
+                    )
+                    time.sleep(wait_time)
+                else:
+                    logger.error(
+                        f"❌ API调用失败，已重试{max_retries}次，程序退出\n"
+                        f"   最后错误: {str(e)}"
+                    )
+                    logger.error("💡 请检查网络连接或API配置")
+                    sys.exit(1)
+        
+        # 理论上不会到这里，但为了类型检查
+        raise last_error
     
     def chat_with_system_prompt(
         self,
