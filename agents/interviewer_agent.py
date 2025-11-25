@@ -15,6 +15,7 @@ from agents.prompts.interviewer_prompts import (
     FOLLOW_UP_PROMPT,
     FINAL_REPORT_PROMPT
 )
+from core.score_normalizer import ScoreNormalizer
 
 
 @dataclass
@@ -32,7 +33,7 @@ class InterviewerAgent:
     def __init__(self, llm_client, job_config: Dict, company_config: Dict):
         """
         初始化面试官Agent
-        
+
         Args:
             llm_client: LLM客户端实例
             job_config: 职位配置
@@ -43,6 +44,10 @@ class InterviewerAgent:
         self.company_config = company_config
         self.conversation_history = []
         self.all_evaluations = []  # 存储所有评估结果
+
+        # Phase 1: 初始化评分标准化器
+        self.score_normalizer = ScoreNormalizer()
+        logger.info("✅ 评分标准化器已加载")
         
     def generate_interview_script(self, candidate_level: str = "senior") -> List[InterviewQuestion]:
         """
@@ -105,27 +110,27 @@ class InterviewerAgent:
     
     def evaluate_answer(self, question: str, answer: str, target_skills: List[str] = None) -> Dict[str, Any]:
         """
-        评估候选人回答
-        
+        评估候选人回答 (Phase 1: 多维度评分 + 标准化)
+
         Args:
             question: 问题内容
             answer: 候选人回答
             target_skills: 目标技能列表
-            
+
         Returns:
-            评估结果，包含分数和反馈
+            评估结果，包含维度评分、标准化分数和反馈
         """
-        logger.info("正在评估候选人回答...")
-        
+        logger.info("正在评估候选人回答 (多维度评分)...")
+
         # 先记录候选人的回答到对话历史
         self.conversation_history.append({
             "role": "candidate",
             "content": answer
         })
-        
+
         if target_skills is None:
             target_skills = []
-        
+
         # 构建评估提示词
         system_prompt = self._build_system_prompt()
         user_message = ANSWER_EVALUATION_PROMPT.format(
@@ -133,9 +138,9 @@ class InterviewerAgent:
             answer=answer,
             target_skills=", ".join(target_skills) if target_skills else "综合能力"
         )
-        
+
         try:
-            # 调用LLM进行评估
+            # 调用LLM进行多维度评估
             evaluation_json = self.llm_client.chat_with_json_response(
                 messages=[
                     {"role": "system", "content": system_prompt},
@@ -143,21 +148,87 @@ class InterviewerAgent:
                 ],
                 temperature=0.3
             )
-            
+
+            # 验证和标准化维度评分
+            dimension_scores = evaluation_json.get("dimension_scores", {})
+
+            # 如果缺少维度评分，使用默认值
+            if not dimension_scores:
+                logger.warning("⚠️  LLM未返回dimension_scores，使用默认值")
+                dimension_scores = {
+                    "technical_depth": 2,
+                    "practical_experience": 2,
+                    "answer_specificity": 2,
+                    "logical_clarity": 2,
+                    "honesty": 3,
+                    "communication": 2
+                }
+
+            # 验证维度评分
+            if not self.score_normalizer.validate_dimension_scores(dimension_scores):
+                logger.warning("⚠️  维度评分验证失败，使用默认值")
+                dimension_scores = {
+                    "technical_depth": 2,
+                    "practical_experience": 2,
+                    "answer_specificity": 2,
+                    "logical_clarity": 2,
+                    "honesty": 3,
+                    "communication": 2
+                }
+
+            # 使用标准化器计算标准化分数
+            normalized_score = self.score_normalizer.normalize_dimension_scores(dimension_scores)
+
+            # 获取分数解释
+            score_interpretation = self.score_normalizer.get_score_interpretation(normalized_score)
+
+            # 整合评估结果
+            evaluation_result = {
+                # Phase 1: 新增字段
+                "dimension_scores": dimension_scores,
+                "normalized_score": normalized_score,
+                "score_interpretation": score_interpretation,
+
+                # 兼容旧字段 (用于其他模块)
+                "score": int(normalized_score / 10),  # 转换为1-10分，兼容旧代码
+
+                # LLM原始输出
+                "feedback": evaluation_json.get("feedback", ""),
+                "confidence_level": evaluation_json.get("confidence_level", "uncertain"),
+                "need_follow_up": evaluation_json.get("need_follow_up", "no"),
+                "follow_up_direction": evaluation_json.get("follow_up_direction", "")
+            }
+
             # 记录评估结果
             self.conversation_history.append({
                 "role": "interviewer",
                 "type": "evaluation",
-                "content": evaluation_json
+                "content": evaluation_result
             })
-            
-            logger.success(f"✅ 评估完成: 分数 {evaluation_json.get('score', 0)}/10")
-            return evaluation_json
-            
+
+            logger.success(
+                f"✅ 评估完成: 标准化分数 {normalized_score:.1f}/100 "
+                f"({score_interpretation['recommendation']})"
+            )
+
+            return evaluation_result
+
         except Exception as e:
             logger.error(f"❌ 评估失败: {e}")
+            import traceback
+            traceback.print_exc()
+
             # 返回默认评估
             return {
+                "dimension_scores": {
+                    "technical_depth": 2,
+                    "practical_experience": 2,
+                    "answer_specificity": 2,
+                    "logical_clarity": 2,
+                    "honesty": 3,
+                    "communication": 2
+                },
+                "normalized_score": 50.0,
                 "score": 5,
                 "feedback": "评估失败，使用默认分数",
                 "need_follow_up": "no"

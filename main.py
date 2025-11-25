@@ -49,42 +49,57 @@ def run_demo_interview():
         
         # 4. 显示评估结果
         print("\n" + "=" * 60)
-        print("📊 面试评估报告")
+        print("📊 面试评估报告 (Phase 1: 标准化评分体系)")
         print("=" * 60)
-        
+
         evaluation = result.evaluation
-        
-        # 推荐度
+
+        # 推荐度 (标准化分数 0-100)
         print(f"\n🎯 推荐度评分: {result.recommendation_score}/100")
-        
+
         # 招聘建议
         if "recommendation" in evaluation:
             print(f"📝 招聘建议: {evaluation['recommendation']}")
-        
-        # 技能评分
+
+        # 维度评分总结 (Phase 1新增)
+        if "dimension_scores_summary" in evaluation:
+            print("\n📋 多维度评分 (1-4分):")
+            dimension_names = {
+                "technical_depth": "技术深度",
+                "practical_experience": "实践经验",
+                "answer_specificity": "回答具体性",
+                "logical_clarity": "逻辑清晰度",
+                "honesty": "诚实度",
+                "communication": "沟通能力"
+            }
+            for dim_key, score in evaluation['dimension_scores_summary'].items():
+                dim_name = dimension_names.get(dim_key, dim_key)
+                print(f"   - {dim_name}: {score}/4")
+
+        # 技能评分 (标准化分数 0-100)
         if "skill_scores" in evaluation:
-            print("\n💪 技能评分:")
-            for skill, score in evaluation['skill_scores'].items():
-                print(f"   - {skill}: {score}/10")
-        
+            print("\n💪 技能评分 (标准化分数):")
+            for skill, score in list(evaluation['skill_scores'].items())[:8]:
+                print(f"   - {skill}: {score}/100")
+
         # 优势
         if "strengths" in evaluation:
             print("\n✨ 优势:")
             for strength in evaluation['strengths'][:3]:
                 print(f"   - {strength}")
-        
+
         # 改进建议
         if "improvements" in evaluation:
             print("\n📈 待改进:")
             for improvement in evaluation['improvements'][:3]:
                 print(f"   - {improvement}")
-        
+
         # 总结
         if result.summary:
             print(f"\n📄 总结:\n{result.summary}")
-        
+
         print("\n" + "=" * 60)
-        print("✅ Demo 完成!")
+        print("✅ Demo 完成! (Phase 1: 多维度评分 + 标准化)")
         print(f"📁 面试记录已保存: data/interviews/")
         print("=" * 60)
         
@@ -245,36 +260,51 @@ def run_random_personality_interview():
         
         # 显示评估结果
         print("\n" + "=" * 60)
-        print("📊 面试评估报告")
+        print("📊 面试评估报告 (Phase 1: 标准化评分体系)")
         print("=" * 60)
-        
+
         evaluation = result.evaluation
-        
+
         print(f"\n🎯 推荐度评分: {result.recommendation_score}/100")
-        
+
         if "recommendation" in evaluation:
             print(f"📝 招聘建议: {evaluation['recommendation']}")
-        
+
+        # 维度评分总结 (Phase 1新增)
+        if "dimension_scores_summary" in evaluation:
+            print("\n📋 多维度评分 (1-4分):")
+            dimension_names = {
+                "technical_depth": "技术深度",
+                "practical_experience": "实践经验",
+                "answer_specificity": "回答具体性",
+                "logical_clarity": "逻辑清晰度",
+                "honesty": "诚实度",
+                "communication": "沟通能力"
+            }
+            for dim_key, score in evaluation['dimension_scores_summary'].items():
+                dim_name = dimension_names.get(dim_key, dim_key)
+                print(f"   - {dim_name}: {score}/4")
+
         if "skill_scores" in evaluation:
-            print("\n💪 技能评分:")
+            print("\n💪 技能评分 (标准化分数):")
             for skill, score in list(evaluation['skill_scores'].items())[:8]:
-                print(f"   - {skill}: {score}/10")
-        
+                print(f"   - {skill}: {score}/100")
+
         if "strengths" in evaluation:
             print("\n✨ 优势:")
             for strength in evaluation['strengths'][:3]:
                 print(f"   - {strength}")
-        
+
         if "improvements" in evaluation:
             print("\n📈 待改进:")
             for improvement in evaluation['improvements'][:3]:
                 print(f"   - {improvement}")
-        
+
         if result.summary:
             print(f"\n📄 总结:\n{result.summary}")
-        
+
         print("\n" + "=" * 60)
-        print("✅ 随机性格面试完成!")
+        print("✅ 随机性格面试完成! (Phase 1: 多维度评分 + 标准化)")
         print(f"📁 面试记录已保存: data/interviews/")
         print("=" * 60)
         
