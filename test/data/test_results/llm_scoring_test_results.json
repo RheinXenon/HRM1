@@ -1,0 +1,42 @@
+[
+  {
+    "candidate_type": "优秀候选人",
+    "status": "PASS",
+    "normalized_score": 77.5,
+    "expected_range": [
+      75,
+      100
+    ],
+    "in_range": true
+  },
+  {
+    "candidate_type": "普通候选人",
+    "status": "PASS",
+    "normalized_score": 41.2,
+    "expected_range": [
+      40,
+      65
+    ],
+    "in_range": true
+  },
+  {
+    "candidate_type": "不懂装懂候选人",
+    "status": "PASS",
+    "normalized_score": 17.5,
+    "expected_range": [
+      0,
+      45
+    ],
+    "in_range": true
+  },
+  {
+    "candidate_type": "参差不齐候选人",
+    "status": "PASS",
+    "normalized_score": 50.0,
+    "expected_range": [
+      50,
+      70
+    ],
+    "in_range": true
+  }
+]
