@@ -61,11 +61,11 @@ def test_overconfident_candidate():
     print(f"\n🎯 推荐度评分: {result.recommendation_score}/100")
     print(f"📝 招聘建议: {evaluation.get('recommendation', 'N/A')}")
     
-    # 技能评分
+    # 技能评分 (Phase 1: 标准化评分 0-100)
     if "skill_scores" in evaluation:
-        print("\n💪 技能评分:")
+        print("\n💪 技能评分 (标准化分数):")
         for skill, score in evaluation['skill_scores'].items():
-            print(f"   - {skill}: {score}/10")
+            print(f"   - {skill}: {score}/100")
     
     # 统计追问次数
     followup_count = sum(1 for entry in result.conversation_log 

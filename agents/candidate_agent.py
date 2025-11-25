@@ -22,7 +22,7 @@ from agents.prompts.candidate_prompts import (
 class CandidateProfile:
     """候选人配置数据类"""
     name: str
-    skills: Dict[str, int]  # 技能名称 -> 等级(1-10)
+    skills: Dict[str, int]  # 技能名称 -> 等级(1-10, 配置便利性, 评分系统内部使用0-100标准化分数)
     experience: Dict[str, Any]  # 经验信息
     personality: Dict[str, int]  # 性格特质参数
     knowledge_blind_spots: Dict[str, list] = None  # 知识盲区

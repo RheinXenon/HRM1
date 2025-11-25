@@ -23,7 +23,7 @@ class InterviewQuestion:
     """面试问题数据类"""
     category: str  # 问题类别：职位/技术/文化/行为
     question: str  # 问题内容
-    difficulty: int  # 难度等级 1-10
+    difficulty: int  # 难度等级 1-10 (注：评分系统已升级为0-100标准化分数，但问题难度仍用1-10便于配置)
     expected_skills: List[str]  # 期望考察的技能
 
 
@@ -241,7 +241,7 @@ class InterviewerAgent:
         Args:
             answer: 候选人回答
             target_skills: 目标技能列表
-            score: 评分
+            score: 评分（注意：此处使用1-10分制的兼容格式，非0-100标准化分数）
             
         Returns:
             检测结果，包含是否可疑、可疑信号、建议追问的技能
@@ -665,12 +665,21 @@ class InterviewerAgent:
                 # 包含候选人的回答
                 formatted.append(f"【候选人回答】: {content}")
             elif role == "interviewer" and entry_type == "evaluation":
-                # 包含评估信息
+                # 包含评估信息 (Phase 1: 使用标准化评分)
                 if isinstance(content, dict):
-                    score = content.get("score", 0)
-                    feedback = content.get("feedback", "")
-                    formatted.append(f"  [评分: {score}/10 | 反馈: {feedback}]")
+                    # 优先使用新的标准化评分
+                    normalized_score = content.get("normalized_score", None)
+                    if normalized_score is not None:
+                        score_interp = content.get("score_interpretation", {})
+                        recommendation = score_interp.get("recommendation", "")
+                        feedback = content.get("feedback", "")
+                        formatted.append(f"  [评分: {normalized_score:.1f}/100 ({recommendation}) | 反馈: {feedback}]")
+                    else:
+                        # 降级到旧评分格式
+                        score = content.get("score", 0)
+                        feedback = content.get("feedback", "")
+                        formatted.append(f"  [评分: {score}/10 | 反馈: {feedback}]")
                 else:
-                    formatted.append(f"  [评分: {content}/10]")
+                    formatted.append(f"  [评分: {content}]")
         
         return "\n".join(formatted)

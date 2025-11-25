@@ -11,7 +11,7 @@ from dataclasses import dataclass
 class SkillEvaluation:
     """技能评估结果"""
     skill_name: str
-    score: int  # 1-10
+    score: float  # 0-100 标准化分数（使用ScoreNormalizer计算）
     evidence: List[str]  # 支持该评分的证据
     feedback: str
 

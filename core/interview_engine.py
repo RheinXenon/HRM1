@@ -178,12 +178,19 @@ class InterviewEngine:
                 target_skills=question.expected_skills
             )
             
-            score = evaluation.get("score", 0)
-            print(f"\n📊 [内部评分: {score}/10]")
+            # Phase 1: 使用新的标准化评分 (0-100)
+            normalized_score = evaluation.get("normalized_score", 50.0)
+            score_interpretation = evaluation.get("score_interpretation", {})
+            recommendation = score_interpretation.get("recommendation", "观察")
+            
+            # 兼容旧代码：保留1-10分制的score字段
+            old_score = evaluation.get("score", int(normalized_score / 10))
+            
+            print(f"\n📊 [评分: {normalized_score:.1f}/100 - {recommendation}]")
             
             conversation_log.append({
                 "role": "system",
-                "content": f"评分: {score}/10"
+                "content": f"标准化评分: {normalized_score:.1f}/100, 建议: {recommendation}"
             })
             
             # ===== 追问机制 =====
@@ -191,19 +198,20 @@ class InterviewEngine:
             confidence_level = evaluation.get("confidence_level", "genuine")
             need_followup_by_llm = evaluation.get("need_follow_up", "no").lower() == "yes"
             
-            # 同时使用规则检测作为辅助
+            # 同时使用规则检测作为辅助 (传入旧分数用于兼容)
             detection = interviewer.detect_shallow_answer(
                 answer=answer,
                 target_skills=question.expected_skills,
-                score=score
+                score=old_score
             )
             
             # 综合判断：LLM判定过度自信 或 规则检测可疑且得分较高
-            # 降低门槛：只要可疑度>= 3分或LLM认为需追问，就追问
+            # Phase 1: 使用标准化分数判断 (0-100分制)
+            # 阈值: 50分(中等) 和 60分(良好)
             should_followup = (
                 (confidence_level == "overconfident" and need_followup_by_llm) or
-                (detection["is_suspicious"] and score >= 5) or
-                (detection.get("suspicion_score", 0) >= 3 and score >= 6)
+                (detection["is_suspicious"] and normalized_score >= 50) or
+                (detection.get("suspicion_score", 0) >= 3 and normalized_score >= 60)
             )
             
             if should_followup:
@@ -252,36 +260,43 @@ class InterviewEngine:
                     target_skills=question.expected_skills
                 )
                 
-                followup_score = followup_evaluation.get("score", 0)
+                # Phase 1: 使用标准化评分比较
+                followup_normalized_score = followup_evaluation.get("normalized_score", 50.0)
+                followup_interpretation = followup_evaluation.get("score_interpretation", {})
+                followup_recommendation = followup_interpretation.get("recommendation", "观察")
                 
-                # 比较前后评分
-                score_drop = score - followup_score
-                if score_drop >= 2:
-                    # 追问后分数下降明显，说明确实不懂装懂
-                    final_score = followup_score
+                # 比较前后评分 (0-100分制)
+                score_drop = normalized_score - followup_normalized_score
+                
+                if score_drop >= 20:
+                    # 追问后分数下降明显(≥20分)，说明确实不懂装懂
+                    final_normalized_score = followup_normalized_score
                     flag = "🚩 追问后露怯"
-                    print(f"\n📊 [追问评分: {followup_score}/10] {flag}")
-                    print(f"⚠️  评分从 {score} 降至 {followup_score}，怀疑不懂装懂")
-                elif followup_score >= score:
+                    print(f"\n📊 [追问评分: {followup_normalized_score:.1f}/100 - {followup_recommendation}] {flag}")
+                    print(f"⚠️  评分从 {normalized_score:.1f} 降至 {followup_normalized_score:.1f}，怀疑不懂装懂")
+                elif followup_normalized_score >= normalized_score:
                     # 追问后回答依然好，可能确实懂
-                    final_score = followup_score
+                    final_normalized_score = followup_normalized_score
                     flag = "✅ 追问后依然扎实"
-                    print(f"\n📊 [追问评分: {followup_score}/10] {flag}")
+                    print(f"\n📊 [追问评分: {followup_normalized_score:.1f}/100 - {followup_recommendation}] {flag}")
                 else:
-                    # 轻微下降，取平均
-                    final_score = (score + followup_score) / 2
+                    # 轻微下降(<20分)，取平均
+                    final_normalized_score = (normalized_score + followup_normalized_score) / 2
                     flag = "⚡ 追问后略有下降"
-                    print(f"\n📊 [追问评分: {followup_score}/10] {flag}")
+                    print(f"\n📊 [追问评分: {followup_normalized_score:.1f}/100 - {followup_recommendation}] {flag}")
                 
                 conversation_log.append({
                     "role": "system",
-                    "content": f"追问评分: {followup_score}/10, 最终: {final_score}/10, 标记: {flag}"
+                    "content": f"追问评分: {followup_normalized_score:.1f}/100, 最终: {final_normalized_score:.1f}/100, 标记: {flag}"
                 })
                 
-                # 更新评估分数
-                evaluation["score"] = final_score
-                evaluation["original_score"] = score
-                evaluation["followup_score"] = followup_score
+                # 更新评估分数 (同时更新新旧两种格式)
+                evaluation["normalized_score"] = final_normalized_score
+                evaluation["original_normalized_score"] = normalized_score
+                evaluation["followup_normalized_score"] = followup_normalized_score
+                evaluation["score"] = int(final_normalized_score / 10)  # 兼容旧格式
+                evaluation["original_score"] = old_score
+                evaluation["followup_score"] = int(followup_normalized_score / 10)
                 evaluation["followup_flag"] = flag
         
         # 7. 候选人提问
