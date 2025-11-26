@@ -207,18 +207,14 @@ def main():
         
         st.markdown("---")
         
-        # 批量模拟（简化版）
+        # 批量模拟
         batch_size = st.number_input(
             "🔢 批量模拟数量",
             min_value=1,
-            max_value=5,
+            max_value=10,
             value=1,
-            help="一次模拟多少个候选人（当前版本仅支持单个）"
+            help="设置一次自动执行多少个面试"
         )
-        
-        if batch_size > 1:
-            st.warning("⚠️ 批量模拟功能开发中，当前仅支持单个候选人")
-            batch_size = 1
     
     # 主区域 - 分两栏
     col_control, col_display = st.columns([1, 2])
@@ -232,16 +228,21 @@ def main():
         
         with col1:
             if st.button("▶️ 开始面试", use_container_width=True, type="primary", disabled=st.session_state.interview_running):
-                # 生成候选人配置
-                if candidate_type == "模板候选人":
-                    candidate_config = generate_candidate_config(
-                        candidate_type, template_name, domain_id, None, None
-                    )
-                else:
-                    candidate_config = generate_candidate_config(
-                        candidate_type, None, domain_id, strategy, 
-                        archetype if archetype != "random" else None
-                    )
+                # 批量生成候选人配置
+                candidate_configs = []
+                
+                with st.spinner(f"正在生成 {batch_size} 个候选人配置..."):
+                    for _ in range(batch_size):
+                        if candidate_type == "模板候选人":
+                            config = generate_candidate_config(
+                                candidate_type, template_name, domain_id, None, None
+                            )
+                        else:
+                            config = generate_candidate_config(
+                                candidate_type, None, domain_id, strategy, 
+                                archetype if archetype != "random" else None
+                            )
+                        candidate_configs.append(config)
                 
                 # 清空之前的消息
                 st.session_state.messages = []
@@ -250,10 +251,10 @@ def main():
                 st.session_state.resume_data = None
                 st.session_state.interview_info = None
                 
-                # 启动面试
+                # 启动面试（传入配置列表）
                 st.session_state.controller.start_interview(
                     domain_id=domain_id,
-                    candidate_config=candidate_config,
+                    candidate_configs=candidate_configs,
                     mode=mode
                 )
                 st.session_state.interview_running = True

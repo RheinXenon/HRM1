@@ -113,40 +113,55 @@ class InterviewController:
     def _run_interview_thread(
         self,
         domain_id: str,
-        candidate_config: Dict,
+        candidate_configs: List[Dict],
         mode: str,
         callback: Optional[Callable]
     ):
         """在独立线程中运行面试"""
         try:
-            self.message_queue.put({
-                "type": "system",
-                "content": f"🚀 开始{mode}模式面试 - 领域: {domain_id}"
-            })
+            total_candidates = len(candidate_configs)
             
-            # 创建面试引擎
-            self.engine = InterviewEngine()
-            
-            # 生成领域配置
-            company_config, job_config = generate_domain_config(domain_id)
-            
-            # 发送候选人信息
-            profile = candidate_config.get("profile", candidate_config)
-            self.message_queue.put({
-                "type": "candidate_info",
-                "content": {
-                    "name": profile.get("name", "未知"),
-                    "skills": profile.get("skills", {}),
-                    "personality": profile.get("personality", {}),
-                    "experience": profile.get("experience", {})
-                }
-            })
-            
-            # 运行面试（通过hook捕获对话）
-            self._run_interview_with_hooks(
-                candidate_config, mode, domain_id,
-                company_config, job_config
-            )
+            for idx, candidate_config in enumerate(candidate_configs, 1):
+                # 检查中止标志
+                if self.stop_flag.is_set():
+                    break
+                
+                self.message_queue.put({
+                    "type": "system",
+                    "content": f"🚀 开始第 {idx}/{total_candidates} 个面试 (领域: {domain_id})"
+                })
+                
+                # 创建面试引擎
+                self.engine = InterviewEngine()
+                
+                # 生成领域配置
+                company_config, job_config = generate_domain_config(domain_id)
+                
+                # 发送候选人信息
+                profile = candidate_config.get("profile", candidate_config)
+                self.message_queue.put({
+                    "type": "candidate_info",
+                    "content": {
+                        "name": profile.get("name", "未知"),
+                        "skills": profile.get("skills", {}),
+                        "personality": profile.get("personality", {}),
+                        "experience": profile.get("experience", {})
+                    }
+                })
+                
+                # 运行面试（通过hook捕获对话）
+                self._run_interview_with_hooks(
+                    candidate_config, mode, domain_id,
+                    company_config, job_config
+                )
+                
+                # 如果还有下一个，等待片刻
+                if idx < total_candidates and not self.stop_flag.is_set():
+                    self.message_queue.put({
+                        "type": "system",
+                        "content": "⏳ 准备下一个面试..."
+                    })
+                    time.sleep(2)
             
         except Exception as e:
             self.message_queue.put({
@@ -157,7 +172,7 @@ class InterviewController:
             self.is_running = False
             self.message_queue.put({
                 "type": "system",
-                "content": "✅ 面试流程结束"
+                "content": "✅ 批量面试流程结束"
             })
             if callback:
                 callback()

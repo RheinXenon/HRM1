@@ -88,6 +88,155 @@ def main():
     # 加载数据
     loader = DataLoader()
     
+    # 加载数据
+    loader = DataLoader()
+    
+    # 检查是否选择了特定面试进行查看
+    if 'selected_interview_id' in st.session_state and st.session_state.selected_interview_id:
+        interview_id = st.session_state.selected_interview_id
+        interview = loader.load_interview_by_id(interview_id)
+        
+        if interview:
+            # 返回按钮
+            if st.button("🔙 返回列表"):
+                del st.session_state.selected_interview_id
+                st.rerun()
+            
+            st.title(f"🔍 面试详情: {interview.get('candidate_name', '')} - {interview.get('job_title', '')}")
+            
+            # 基本信息
+            col1, col2, col3 = st.columns(3)
+            
+            with col1:
+                st.metric("面试ID", interview.get('interview_id', ''))
+            
+            with col2:
+                st.metric("时间", interview.get('start_time', '').replace('T', ' ')[:16])
+            
+            with col3:
+                st.metric("推荐度评分", f"{interview.get('recommendation_score', 0):.1f}/100")
+            
+            st.markdown("---")
+            
+            # 评估报告
+            evaluation = interview.get('evaluation', {})
+            
+            col1, col2 = st.columns([1, 1])
+            
+            with col1:
+                # 综合评分
+                score = interview.get('recommendation_score', 0)
+                fig = create_score_chart(score, "综合推荐度")
+                st.plotly_chart(fig, use_container_width=True)
+            
+            with col2:
+                # 维度雷达图
+                if 'dimension_scores_summary' in evaluation:
+                    dimension_names = {
+                        "technical_depth": "技术深度",
+                        "practical_experience": "实践经验",
+                        "answer_specificity": "回答具体性",
+                        "logical_clarity": "逻辑清晰度",
+                        "honesty": "诚实度",
+                        "communication": "沟通能力"
+                    }
+                    renamed_dims = {
+                        dimension_names.get(k, k): v 
+                        for k, v in evaluation['dimension_scores_summary'].items()
+                    }
+                    fig = create_dimension_radar_chart(renamed_dims)
+                    st.plotly_chart(fig, use_container_width=True)
+            
+            # 技能评分
+            if 'skill_scores' in evaluation:
+                st.markdown("### 💪 技能评分")
+                fig = create_skills_bar_chart(evaluation['skill_scores'])
+                st.plotly_chart(fig, use_container_width=True)
+            
+            # 文字评估
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                if 'strengths' in evaluation:
+                    st.markdown("### ✨ 优势")
+                    for strength in evaluation['strengths']:
+                        st.success(f"✓ {strength}")
+            
+            with col2:
+                if 'improvements' in evaluation:
+                    st.markdown("### 📈 改进建议")
+                    for improvement in evaluation['improvements']:
+                        st.warning(f"• {improvement}")
+            
+            # 总结
+            if 'summary' in evaluation:
+                st.markdown("### 📝 总结")
+                st.info(evaluation['summary'])
+            
+            if 'recommendation' in evaluation:
+                st.markdown("### 🎯 招聘建议")
+                st.markdown(f"**{evaluation['recommendation']}**")
+            
+            st.markdown("---")
+            
+            # 对话记录
+            st.markdown("### 💬 完整对话记录")
+            
+            conversation = interview.get('conversation_log', [])
+            
+            for i, msg in enumerate(conversation):
+                role = msg.get('role', '')
+                content = msg.get('content', '')
+                
+                if role == 'interviewer':
+                    st.markdown(f"""
+                    <div style="background: #eff6ff; padding: 1rem; border-radius: 8px; margin: 0.5rem 0; border-left: 4px solid #3b82f6;">
+                        <strong>👔 面试官:</strong><br>{content}
+                    </div>
+                    """, unsafe_allow_html=True)
+                elif role == 'candidate':
+                    st.markdown(f"""
+                    <div style="background: #f0fdf4; padding: 1rem; border-radius: 8px; margin: 0.5rem 0; border-left: 4px solid #10b981;">
+                        <strong>👤 候选人:</strong><br>{content}
+                    </div>
+                    """, unsafe_allow_html=True)
+                elif role == 'system':
+                    st.markdown(f"""
+                    <div style="background: #fef3c7; padding: 0.5rem; border-radius: 8px; margin: 0.5rem 0;">
+                        <strong>📢 系统:</strong> {content}
+                    </div>
+                    """, unsafe_allow_html=True)
+            
+            # 简历信息
+            if 'resume' in interview and interview['resume']:
+                st.markdown("---")
+                st.markdown("### 📄 候选人简历")
+                
+                resume = interview['resume']
+                
+                col1, col2 = st.columns(2)
+                
+                with col1:
+                    st.markdown(f"**姓名:** {resume.get('name', '')}")
+                    st.markdown(f"**邮箱:** {resume.get('email', '')}")
+                    st.markdown(f"**电话:** {resume.get('phone', '')}")
+                
+                with col2:
+                    st.markdown(f"**教育背景:** {resume.get('education', [{}])[0].get('degree', '')} - {resume.get('education', [{}])[0].get('school', '')}")
+                
+                if 'work_experience' in resume:
+                    st.markdown("**工作经验:**")
+                    for exp in resume['work_experience']:
+                        st.markdown(f"- **{exp.get('position', '')}** @ {exp.get('company', '')} ({exp.get('duration', '')})")
+                        st.markdown(f"  {exp.get('description', '')}")
+            
+            # 底部返回按钮
+            if st.button("🔙 返回列表", key="back_bottom"):
+                del st.session_state.selected_interview_id
+                st.rerun()
+                
+            return  # 结束渲染，只显示详情页
+
     # 顶部统计卡片
     st.subheader("📈 系统概览")
     
@@ -131,7 +280,7 @@ def main():
     st.markdown("---")
     
     # Tab切换
-    tab1, tab2, tab3, tab4 = st.tabs(["📋 面试列表", "📊 数据分析", "🔍 详细查看", "📥 数据导出"])
+    tab1, tab2, tab4 = st.tabs(["📋 面试列表", "📊 数据分析", "📥 数据导出"])
     
     # Tab 1: 面试列表
     with tab1:
@@ -332,158 +481,7 @@ def main():
         else:
             st.info("📭 暂无面试数据")
     
-    # Tab 3: 详细查看
-    with tab3:
-        st.subheader("🔍 面试详情")
-        
-        # 选择面试
-        interviews = loader.load_all_interviews()
-        
-        if interviews:
-            # 创建选择列表
-            interview_options = {
-                f"{i.get('candidate_name', '')} - {i.get('job_title', '')} ({i.get('interview_id', '')})": i.get('interview_id', '')
-                for i in interviews
-            }
-            
-            selected_label = st.selectbox(
-                "选择面试记录",
-                options=list(interview_options.keys())
-            )
-            
-            interview_id = interview_options[selected_label]
-            interview = loader.load_interview_by_id(interview_id)
-            
-            if interview:
-                # 基本信息
-                col1, col2, col3 = st.columns(3)
-                
-                with col1:
-                    st.metric("候选人", interview.get('candidate_name', ''))
-                
-                with col2:
-                    st.metric("职位", interview.get('job_title', ''))
-                
-                with col3:
-                    st.metric("推荐度评分", f"{interview.get('recommendation_score', 0):.1f}/100")
-                
-                st.markdown("---")
-                
-                # 评估报告
-                evaluation = interview.get('evaluation', {})
-                
-                col1, col2 = st.columns([1, 1])
-                
-                with col1:
-                    # 综合评分
-                    score = interview.get('recommendation_score', 0)
-                    fig = create_score_chart(score, "综合推荐度")
-                    st.plotly_chart(fig, use_container_width=True)
-                
-                with col2:
-                    # 维度雷达图
-                    if 'dimension_scores_summary' in evaluation:
-                        dimension_names = {
-                            "technical_depth": "技术深度",
-                            "practical_experience": "实践经验",
-                            "answer_specificity": "回答具体性",
-                            "logical_clarity": "逻辑清晰度",
-                            "honesty": "诚实度",
-                            "communication": "沟通能力"
-                        }
-                        renamed_dims = {
-                            dimension_names.get(k, k): v 
-                            for k, v in evaluation['dimension_scores_summary'].items()
-                        }
-                        fig = create_dimension_radar_chart(renamed_dims)
-                        st.plotly_chart(fig, use_container_width=True)
-                
-                # 技能评分
-                if 'skill_scores' in evaluation:
-                    st.markdown("### 💪 技能评分")
-                    fig = create_skills_bar_chart(evaluation['skill_scores'])
-                    st.plotly_chart(fig, use_container_width=True)
-                
-                # 文字评估
-                col1, col2 = st.columns(2)
-                
-                with col1:
-                    if 'strengths' in evaluation:
-                        st.markdown("### ✨ 优势")
-                        for strength in evaluation['strengths']:
-                            st.success(f"✓ {strength}")
-                
-                with col2:
-                    if 'improvements' in evaluation:
-                        st.markdown("### 📈 改进建议")
-                        for improvement in evaluation['improvements']:
-                            st.warning(f"• {improvement}")
-                
-                # 总结
-                if 'summary' in evaluation:
-                    st.markdown("### 📝 总结")
-                    st.info(evaluation['summary'])
-                
-                if 'recommendation' in evaluation:
-                    st.markdown("### 🎯 招聘建议")
-                    st.markdown(f"**{evaluation['recommendation']}**")
-                
-                st.markdown("---")
-                
-                # 对话记录
-                st.markdown("### 💬 完整对话记录")
-                
-                conversation = interview.get('conversation_log', [])
-                
-                for i, msg in enumerate(conversation):
-                    role = msg.get('role', '')
-                    content = msg.get('content', '')
-                    
-                    if role == 'interviewer':
-                        st.markdown(f"""
-                        <div style="background: #eff6ff; padding: 1rem; border-radius: 8px; margin: 0.5rem 0; border-left: 4px solid #3b82f6;">
-                            <strong>👔 面试官:</strong><br>{content}
-                        </div>
-                        """, unsafe_allow_html=True)
-                    elif role == 'candidate':
-                        st.markdown(f"""
-                        <div style="background: #f0fdf4; padding: 1rem; border-radius: 8px; margin: 0.5rem 0; border-left: 4px solid #10b981;">
-                            <strong>👤 候选人:</strong><br>{content}
-                        </div>
-                        """, unsafe_allow_html=True)
-                    elif role == 'system':
-                        st.markdown(f"""
-                        <div style="background: #fef3c7; padding: 0.5rem; border-radius: 8px; margin: 0.5rem 0;">
-                            <strong>📢 系统:</strong> {content}
-                        </div>
-                        """, unsafe_allow_html=True)
-                
-                # 简历信息
-                if 'resume' in interview and interview['resume']:
-                    st.markdown("---")
-                    st.markdown("### 📄 候选人简历")
-                    
-                    resume = interview['resume']
-                    
-                    col1, col2 = st.columns(2)
-                    
-                    with col1:
-                        st.markdown(f"**姓名:** {resume.get('name', '')}")
-                        st.markdown(f"**邮箱:** {resume.get('email', '')}")
-                        st.markdown(f"**电话:** {resume.get('phone', '')}")
-                    
-                    with col2:
-                        st.markdown(f"**教育背景:** {resume.get('education', [{}])[0].get('degree', '')} - {resume.get('education', [{}])[0].get('school', '')}")
-                    
-                    if 'work_experience' in resume:
-                        st.markdown("**工作经验:**")
-                        for exp in resume['work_experience']:
-                            st.markdown(f"- **{exp.get('position', '')}** @ {exp.get('company', '')} ({exp.get('duration', '')})")
-                            st.markdown(f"  {exp.get('description', '')}")
-        else:
-            st.info("📭 暂无面试数据")
-    
-    # Tab 4: 数据导出
+    # Tab 3: 数据导出
     with tab4:
         st.subheader("📥 数据导出")
         
