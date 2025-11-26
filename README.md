@@ -535,7 +535,7 @@ print(f"基于简历生成了 {len(resume_questions)} 个针对性问题")
 
 ---
 
-## � 测试
+## 测试
 
 系统包含完整的测试套件（16个测试文件）：
 
@@ -563,7 +563,7 @@ python test/test_personality_generator.py   # 性格生成器测试
 
 ---
 
-## �🤝 贡献指南
+## 🤝 贡献指南
 
 欢迎贡献代码和提出建议！
 

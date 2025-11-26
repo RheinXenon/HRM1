@@ -306,7 +306,7 @@ def main():
         # 状态显示
         st.subheader("📊 状态")
         
-        status_text = "� 运行中" if st.session_state.interview_running else "⚪ 空闲"
+        status_text = "🟢 运行中" if st.session_state.interview_running else "⚪ 空闲"
         st.markdown(f"**面试状态:** {status_text}")
         
         # 批量进度

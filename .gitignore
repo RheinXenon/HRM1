@@ -57,13 +57,13 @@ data/app.log
 .coverage
 htmlcov/
 
-# Project specific
-data/interviews/*
-!data/interviews/.gitkeep
-data/analysis/*
-!data/analysis/.gitkeep
-data/resumes/*
-!data/resumes/.gitkeep
-.windsurf/rules
+# 临时放出
+# data/interviews/*
+# !data/interviews/.gitkeep
+# data/analysis/*
+# !data/analysis/.gitkeep
+# data/resumes/*
+# !data/resumes/.gitkeep
+# .windsurf/rules
 
 test/data/*

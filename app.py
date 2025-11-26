@@ -1,5 +1,5 @@
 """
-HRM1 智能面试系统 - Streamlit前端主页
+HR 智能面试系统 M1A5 - Streamlit前端主页
 """
 
 import streamlit as st
@@ -12,7 +12,7 @@ sys.path.insert(0, str(project_root))
 
 # 页面配置
 st.set_page_config(
-    page_title="HRM1 智能面试系统",
+    page_title="HR 智能面试系统 M1A5",
     page_icon="🎯",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -60,7 +60,7 @@ st.markdown("""
 # 主页内容
 def main():
     # 标题
-    st.markdown('<h1 class="main-header">🎯 HRM1 智能面试系统</h1>', unsafe_allow_html=True)
+    st.markdown('<h1 class="main-header">🎯 HR 智能面试系统 M1A5</h1>', unsafe_allow_html=True)
     
     st.markdown("---")
     
@@ -199,7 +199,7 @@ def main():
     st.markdown("---")
     st.markdown("""
     <div style="text-align: center; color: #94a3b8; padding: 2rem 0;">
-        <p>HRM1 智能面试系统 v1.0 | 基于大语言模型的智能面试解决方案</p>
+        <p>HR 智能面试系统 M1A5 | 基于大语言模型的智能面试解决方案</p>
         <p>支持的领域：技术 | 营销 | 医疗 | ...</p>
     </div>
     """, unsafe_allow_html=True)
