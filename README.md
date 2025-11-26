@@ -194,11 +194,11 @@ pip install -r requirements.txt
 
 ### 2. 配置环境变量
 
-编辑 `.env` 文件，配置已使用 iflow API：
+复制 `.env.example` 为 `.env`，然后配置你的 iflow API：
 
 ```bash
-# .env 文件配置
-QWEN_API_KEY=your_qwen_api_key_here
+# .env 文件配置示例
+QWEN_API_KEY=your_api_key_here
 QWEN_API_URL=https://apis.iflow.cn/v1
 QWEN_MODEL=qwen3-max
 ```
@@ -206,7 +206,8 @@ QWEN_MODEL=qwen3-max
 **API说明**：
 - 本项目使用 iflow API 访问 qwen3-max 模型
 - iflow 提供 OpenAI 兼容的 API 接口
-- API Key 已配置，可以直接使用
+- 请在 [iflow](https://apis.iflow.cn) 注册并获取你的 API Key
+- 将 `your_api_key_here` 替换为你的真实 API Key
 
 ### 3. 运行主程序
 
