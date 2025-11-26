@@ -1,0 +1,28 @@
+{
+  "domain_id": "healthcare",
+  "domain_name": "医疗/护理",
+  "description": "护理、医疗、健康管理等岗位",
+  
+  "applicable_industries": [
+    "医院",
+    "诊所",
+    "护理中心",
+    "康复机构",
+    "健康管理",
+    "医疗器械",
+    "养老服务"
+  ],
+  
+  "typical_roles": [
+    "护士",
+    "护理主管",
+    "健康管理师",
+    "康复治疗师",
+    "医疗助理",
+    "护理协调员",
+    "临床护理专家"
+  ],
+  
+  "default_company": "general_hospital",
+  "default_job": "registered_nurse"
+}

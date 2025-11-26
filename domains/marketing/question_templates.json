@@ -1,0 +1,84 @@
+{
+  "domain": "marketing",
+  
+  "templates_by_skill_level": {
+    "basic": {
+      "description": "基础级别问题（适用于actual_level 1-3）",
+      "patterns": [
+        "请介绍一下你对{skill}的理解",
+        "你在工作中如何运用{skill}的？",
+        "能说说{skill}的基本概念吗？",
+        "你接触过{skill}相关的工作吗？",
+        "{skill}主要用来做什么？"
+      ]
+    },
+    
+    "intermediate": {
+      "description": "中级问题（适用于actual_level 4-6）",
+      "patterns": [
+        "能分享一个{skill}的成功案例吗？",
+        "在{skill}执行过程中遇到过什么挑战？如何解决的？",
+        "如何衡量{skill}的效果？有哪些关键指标？",
+        "{skill}有哪些常见的误区？你是如何避免的？",
+        "如何向团队或客户展示{skill}的价值？"
+      ]
+    },
+    
+    "advanced": {
+      "description": "高级问题（适用于actual_level 7-10）",
+      "patterns": [
+        "{skill}的核心方法论是什么？",
+        "如何制定{skill}的整体策略？",
+        "在预算有限的情况下，如何最大化{skill}的效果？",
+        "能深入讲讲{skill}的执行框架吗？",
+        "如果要搭建一个{skill}体系，你会如何规划？"
+      ]
+    }
+  },
+  
+  "followup_templates": {
+    "probe_depth": {
+      "description": "深入追问，测试真实理解深度",
+      "patterns": [
+        "能具体说说{mentioned_concept}的执行步骤吗？",
+        "你提到了{term}，能展开讲讲怎么做的吗？",
+        "为什么选择{approach}而不是其他方式？",
+        "{mentioned_concept}的具体数据表现如何？",
+        "如果{scenario}，你会如何调整策略？"
+      ]
+    },
+    
+    "challenge_weakness": {
+      "description": "针对模糊回答进行挑战",
+      "patterns": [
+        "你刚才说{vague_statement}，能具体说说吗？",
+        "这个{concept}的关键要素是什么？",
+        "能举个具体的数据例子吗？",
+        "这个方案的ROI是多少？",
+        "具体的创意或文案是什么样的？"
+      ]
+    },
+    
+    "verify_experience": {
+      "description": "验证实际经验",
+      "patterns": [
+        "你在项目中具体负责哪些环节？",
+        "最终的效果数据是多少？比如CTR、转化率等",
+        "预算是多少？如何分配的？",
+        "能说说具体的执行细节吗？",
+        "遇到过什么坑吗？是如何解决的？"
+      ]
+    }
+  },
+  
+  "scenario_questions": {
+    "description": "场景化问题模板",
+    "patterns": [
+      "如果品牌遭遇{crisis}，你会如何应对？",
+      "假设需要在{timeframe}内达成{goal}，你会如何规划？",
+      "在{budget}预算下，如何实现{objective}？",
+      "如何权衡{aspect1}和{aspect2}？",
+      "如果要提升{metric}，你会从哪些方面入手？"
+    ]
+  }
+}

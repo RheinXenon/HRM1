@@ -6,30 +6,30 @@
 import random
 from typing import Dict, Any, List, Optional
 from loguru import logger
+from domains import DomainLoader
 
 
 class RandomCandidateGenerator:
     """随机候选人生成器"""
     
-    # 技能列表
-    SKILLS = {
-        "backend": ["python", "java", "go", "nodejs", "rust", "php"],
-        "frontend": ["react", "vue", "angular", "typescript", "css"],
-        "database": ["sql", "mongodb", "redis", "postgresql", "mysql"],
-        "architecture": ["system_design", "microservices", "api_design"],
-        "devops": ["kubernetes", "docker", "aws", "gcp", "azure", "jenkins"],
-        "data": ["data_structure", "algorithm", "message_queue"],
-        "soft_skills": ["communication", "leadership", "problem_solving", "teamwork"]
-    }
-    
     # 姓氏和名字库
     SURNAMES = ["王", "李", "张", "刘", "陈", "杨", "黄", "赵", "吴", "周", "徐", "孙", "马", "朱", "胡", "林"]
     GIVEN_NAMES = ["明", "华", "强", "伟", "芳", "娜", "静", "丽", "军", "杰", "涛", "鹏", "磊", "洋", "勇", "峰"]
     
-    def __init__(self, seed: Optional[int] = None):
-        """初始化"""
+    def __init__(self, seed: Optional[int] = None, domain_id: str = "tech"):
+        """
+        初始化
+        
+        Args:
+            seed: 随机种子
+            domain_id: 领域ID，用于加载对应的技能分类
+        """
         if seed:
             random.seed(seed)
+        
+        # 加载领域配置
+        self.domain = DomainLoader(domain_id)
+        self.skill_categories = self.domain.get_skill_categories()
     
     def generate_skills(self, level: str = "mid", num_skills: int = None) -> Dict[str, int]:
         """
@@ -58,7 +58,9 @@ class RandomCandidateGenerator:
         skills = {}
         
         # 为每个类别随机选择技能
-        for category, skill_list in self.SKILLS.items():
+        for category, skill_list in self.skill_categories.items():
+            if not skill_list:
+                continue
             # 每个类别选1-3个技能
             selected = random.sample(skill_list, min(random.randint(1, 3), len(skill_list)))
             
@@ -78,8 +80,8 @@ class RandomCandidateGenerator:
                 break
         
         # 如果技能不够，补充一些
-        all_skills = [s for skills_list in self.SKILLS.values() for s in skills_list]
-        while len(skills) < num_skills:
+        all_skills = self.domain.get_all_skills()
+        while len(skills) < num_skills and all_skills:
             skill = random.choice(all_skills)
             if skill not in skills:
                 score = random.randint(min_score, max_score)

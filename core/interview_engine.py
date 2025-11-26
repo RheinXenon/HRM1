@@ -52,7 +52,8 @@ class InterviewEngine:
         job_file: str,
         company_file: str,
         candidate_config: Dict,
-        mode: str = "demo"
+        mode: str = "demo",
+        domain_id: str = "tech"
     ) -> InterviewResult:
         """
         执行一次完整的面试流程
@@ -62,6 +63,7 @@ class InterviewEngine:
             company_file: 公司信息文件名（不含路径）
             candidate_config: 候选人配置字典
             mode: 面试模式 ("demo" 或 "full")
+            domain_id: 领域ID（tech/marketing/healthcare等），默认为tech
             
         Returns:
             面试结果对象
@@ -85,7 +87,8 @@ class InterviewEngine:
         interviewer = InterviewerAgent(
             llm_client=self.llm_client,
             job_config=job_config,
-            company_config=company_config
+            company_config=company_config,
+            domain_id=domain_id
         )
         
         # 解析候选人配置

@@ -1,0 +1,28 @@
+{
+  "domain_id": "marketing",
+  "domain_name": "营销/传媒",
+  "description": "市场营销、品牌传播、内容运营等岗位",
+  
+  "applicable_industries": [
+    "广告",
+    "公关",
+    "新媒体",
+    "品牌咨询",
+    "电商运营",
+    "数字营销",
+    "内容创作"
+  ],
+  
+  "typical_roles": [
+    "营销经理",
+    "品牌专员",
+    "内容运营",
+    "媒介策划",
+    "社交媒体经理",
+    "市场分析师",
+    "文案策划"
+  ],
+  
+  "default_company": "marketing_agency",
+  "default_job": "marketing_manager"
+}

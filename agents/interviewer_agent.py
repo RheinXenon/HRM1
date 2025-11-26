@@ -16,6 +16,7 @@ from agents.prompts.interviewer_prompts import (
     FINAL_REPORT_PROMPT
 )
 from core.score_normalizer import ScoreNormalizer
+from domains import DomainLoader
 
 
 @dataclass
@@ -30,7 +31,7 @@ class InterviewQuestion:
 class InterviewerAgent:
     """面试官Agent类"""
     
-    def __init__(self, llm_client, job_config: Dict, company_config: Dict):
+    def __init__(self, llm_client, job_config: Dict, company_config: Dict, domain_id: str = "tech"):
         """
         初始化面试官Agent
 
@@ -38,6 +39,7 @@ class InterviewerAgent:
             llm_client: LLM客户端实例
             job_config: 职位配置
             company_config: 公司信息配置
+            domain_id: 领域ID（tech/marketing/healthcare等），默认为tech
         """
         self.llm_client = llm_client
         self.job_config = job_config
@@ -48,6 +50,10 @@ class InterviewerAgent:
         # Phase 1: 初始化评分标准化器
         self.score_normalizer = ScoreNormalizer()
         logger.info("✅ 评分标准化器已加载")
+        
+        # 加载领域配置
+        self.domain = DomainLoader(domain_id)
+        logger.info(f"✅ 领域配置已加载: {self.domain.domain_id}")
         
     def generate_interview_script(self, candidate_level: str = "senior") -> List[InterviewQuestion]:
         """
@@ -250,22 +256,19 @@ class InterviewerAgent:
         suspicious = False
         suspicion_score = 0  # 可疑程度评分，用于更精准的判断
         
+        # 从领域配置加载信号词汇
+        high_level_terms = self.domain.get_high_level_terms()
+        vague_words = self.domain.get_vague_words()
+        weakness_indicators = self.domain.get_weakness_indicators()
+        
         # 信号1：使用高级术语但缺乏具体细节
-        high_level_terms = ["微服务", "分布式", "高并发", "架构", "system design", 
-                           "性能优化", "react", "hooks", "虚拟dom", "jvm", "spring",
-                           "saga", "hystrix", "eureka", "feign", "kubernetes", "容器",
-                           "缓存", "消息队列", "负载均衡", "熔断", "降级"]
         has_high_level_term = any(term in answer.lower() for term in high_level_terms)
         high_level_count = sum(1 for term in high_level_terms if term in answer.lower())
         
         # 信号2：使用模糊词汇
-        vague_words = ["一般", "常用", "基本上", "差不多", "大概", "应该", "可能", "好像", "似乎"]
         vague_count = sum(1 for word in vague_words if word in answer)
         
         # 信号3：露怯关键词
-        weakness_indicators = ["记不太清", "不太记得", "具体的记不住", "记不清楚了", 
-                              "这块不太熟", "不太确定", "了解不够深入", "具体参数记不清",
-                              "忘记了", "想不起来", "不太了解"]
         has_weakness = any(phrase in answer for phrase in weakness_indicators)
         
         # 信号4：回答长度分析
@@ -274,12 +277,15 @@ class InterviewerAgent:
         is_very_short = answer_length < 60 and score >= 6
         
         # 信号5：缺少具体内容
+        concrete_evidence = self.domain.get_concrete_evidence()
+        technical_metrics = self.domain.get_technical_metrics()
+        
         has_numbers = any(char.isdigit() for char in answer)
-        has_example = any(word in answer for word in ["例如", "比如", "举个例子", "具体来说", "代码", "实现"])
-        has_metrics = any(word in answer for word in ["qps", "tps", "并发", "延迟", "响应时间", "吞吐量", "ms", "秒"])
+        has_example = any(word in answer for word in concrete_evidence)
+        has_metrics = any(word in answer for word in technical_metrics)
         
         # 信号6：空话套话
-        empty_phrases = ["我觉得", "我认为", "非常重要", "很有必要", "需要注意", "应该考虑"]
+        empty_phrases = self.domain.get_empty_phrases()
         empty_count = sum(1 for phrase in empty_phrases if phrase in answer)
         
         # === 综合判断逻辑（改进版）===

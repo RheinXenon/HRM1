@@ -1,0 +1,52 @@
+{
+  "skill_categories": {
+    "backend": {
+      "name": "后端开发",
+      "skills": ["python", "java", "go", "nodejs", "rust", "php"],
+      "description": "服务器端开发技能"
+    },
+    "frontend": {
+      "name": "前端开发",
+      "skills": ["react", "vue", "angular", "typescript", "css", "html"],
+      "description": "用户界面开发技能"
+    },
+    "database": {
+      "name": "数据库",
+      "skills": ["sql", "mongodb", "redis", "postgresql", "mysql", "elasticsearch"],
+      "description": "数据存储和查询能力"
+    },
+    "architecture": {
+      "name": "架构设计",
+      "skills": ["system_design", "microservices", "api_design", "distributed_systems"],
+      "description": "系统架构和设计能力"
+    },
+    "devops": {
+      "name": "运维部署",
+      "skills": ["kubernetes", "docker", "aws", "gcp", "azure", "jenkins", "ci_cd"],
+      "description": "基础设施和部署能力"
+    },
+    "data": {
+      "name": "数据与算法",
+      "skills": ["data_structure", "algorithm", "message_queue", "data_processing"],
+      "description": "数据结构、算法和数据处理"
+    }
+  },
+  
+  "soft_skills": {
+    "communication": "沟通能力",
+    "leadership": "领导力",
+    "problem_solving": "问题解决能力",
+    "teamwork": "团队协作",
+    "learning_ability": "学习能力",
+    "time_management": "时间管理"
+  },
+  
+  "skill_descriptions": {
+    "python": "Python编程语言",
+    "java": "Java编程语言",
+    "react": "React前端框架",
+    "system_design": "系统架构设计",
+    "kubernetes": "容器编排技术",
+    "sql": "关系型数据库查询"
+  }
+}

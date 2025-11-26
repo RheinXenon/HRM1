@@ -1,0 +1,80 @@
+{
+  "skill_categories": {
+    "strategy": {
+      "name": "营销策略",
+      "skills": [
+        "market_research",
+        "brand_positioning",
+        "campaign_planning",
+        "competitor_analysis",
+        "target_audience",
+        "marketing_strategy"
+      ],
+      "description": "市场调研和策略规划能力"
+    },
+    "content": {
+      "name": "内容创作",
+      "skills": [
+        "copywriting",
+        "storytelling",
+        "visual_design",
+        "video_production",
+        "content_planning",
+        "creative_thinking"
+      ],
+      "description": "内容策划和创意能力"
+    },
+    "digital": {
+      "name": "数字营销",
+      "skills": [
+        "sem",
+        "seo",
+        "social_media",
+        "email_marketing",
+        "analytics",
+        "conversion_optimization"
+      ],
+      "description": "数字渠道运营能力"
+    },
+    "channel": {
+      "name": "渠道管理",
+      "skills": [
+        "media_planning",
+        "kol_management",
+        "event_planning",
+        "partnership",
+        "channel_strategy"
+      ],
+      "description": "渠道拓展和管理能力"
+    },
+    "analysis": {
+      "name": "数据分析",
+      "skills": [
+        "data_analysis",
+        "user_insights",
+        "roi_analysis",
+        "ab_testing",
+        "metrics_tracking"
+      ],
+      "description": "数据分析和洞察能力"
+    }
+  },
+  
+  "soft_skills": {
+    "creativity": "创意思维",
+    "communication": "沟通协调",
+    "project_management": "项目管理",
+    "presentation": "演讲表达",
+    "negotiation": "谈判能力",
+    "teamwork": "团队协作"
+  },
+  
+  "skill_descriptions": {
+    "market_research": "市场调研分析",
+    "brand_positioning": "品牌定位",
+    "copywriting": "文案撰写",
+    "sem": "搜索引擎营销",
+    "seo": "搜索引擎优化",
+    "social_media": "社交媒体运营"
+  }
+}

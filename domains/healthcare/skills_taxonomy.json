@@ -1,0 +1,81 @@
+{
+  "skill_categories": {
+    "clinical": {
+      "name": "临床护理",
+      "skills": [
+        "vital_signs",
+        "medication_administration",
+        "wound_care",
+        "iv_therapy",
+        "patient_assessment",
+        "emergency_response"
+      ],
+      "description": "基础临床护理技能"
+    },
+    "specialized": {
+      "name": "专科护理",
+      "skills": [
+        "icu_nursing",
+        "pediatric_care",
+        "elderly_care",
+        "surgical_nursing",
+        "oncology_nursing",
+        "cardiac_care"
+      ],
+      "description": "专科护理能力"
+    },
+    "management": {
+      "name": "护理管理",
+      "skills": [
+        "care_planning",
+        "resource_management",
+        "quality_control",
+        "staff_coordination",
+        "documentation",
+        "compliance"
+      ],
+      "description": "护理管理和协调能力"
+    },
+    "patient_care": {
+      "name": "患者照护",
+      "skills": [
+        "patient_education",
+        "family_support",
+        "pain_management",
+        "comfort_care",
+        "discharge_planning",
+        "holistic_care"
+      ],
+      "description": "患者全方位照护能力"
+    },
+    "technology": {
+      "name": "医疗技术",
+      "skills": [
+        "medical_equipment",
+        "health_informatics",
+        "electronic_records",
+        "monitoring_systems",
+        "diagnostic_tools"
+      ],
+      "description": "医疗设备和技术应用"
+    }
+  },
+  
+  "soft_skills": {
+    "empathy": "同理心",
+    "communication": "沟通能力",
+    "teamwork": "团队协作",
+    "stress_management": "压力管理",
+    "attention_to_detail": "细致观察",
+    "critical_thinking": "批判性思维"
+  },
+  
+  "skill_descriptions": {
+    "vital_signs": "生命体征监测",
+    "medication_administration": "药物给药",
+    "wound_care": "伤口护理",
+    "patient_assessment": "患者评估",
+    "icu_nursing": "重症监护",
+    "care_planning": "护理计划制定"
+  }
+}

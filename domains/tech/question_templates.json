@@ -1,0 +1,84 @@
+{
+  "domain": "tech",
+  
+  "templates_by_skill_level": {
+    "basic": {
+      "description": "基础级别问题（适用于actual_level 1-3）",
+      "patterns": [
+        "请介绍一下你对{skill}的理解",
+        "你在项目中如何使用{skill}的？",
+        "能说说{skill}的基本概念吗？",
+        "你是如何学习{skill}的？",
+        "{skill}主要用来解决什么问题？"
+      ]
+    },
+    
+    "intermediate": {
+      "description": "中级问题（适用于actual_level 4-6）",
+      "patterns": [
+        "{skill}在实际项目中遇到过什么问题吗？如何解决的？",
+        "如何评估{skill}的性能？有哪些关键指标？",
+        "能分享一个使用{skill}的实战案例吗？",
+        "{skill}有哪些常见的坑？你是如何避免的？",
+        "在团队中如何推广和使用{skill}？"
+      ]
+    },
+    
+    "advanced": {
+      "description": "高级问题（适用于actual_level 7-10）",
+      "patterns": [
+        "{skill}的底层原理是什么？",
+        "在高并发场景下，{skill}如何优化？",
+        "{skill}在架构设计中如何权衡？",
+        "能深入讲讲{skill}的实现机制吗？",
+        "如果要设计一个{skill}相关的系统，你会如何考虑？"
+      ]
+    }
+  },
+  
+  "followup_templates": {
+    "probe_depth": {
+      "description": "深入追问，测试真实理解深度",
+      "patterns": [
+        "能具体说说{mentioned_concept}的工作原理吗？",
+        "你提到了{term}，能展开讲讲吗？",
+        "为什么选择{approach}而不是其他方案？",
+        "{mentioned_concept}的具体实现细节是什么？",
+        "如果{scenario}，你会如何处理？"
+      ]
+    },
+    
+    "challenge_weakness": {
+      "description": "针对模糊回答进行挑战",
+      "patterns": [
+        "你刚才说{vague_statement}，能具体解释一下吗？",
+        "这个{concept}的关键细节是什么？",
+        "能举个具体的例子说明吗？",
+        "这个方案的优缺点分别是什么？",
+        "在生产环境中如何保证{aspect}？"
+      ]
+    },
+    
+    "verify_experience": {
+      "description": "验证实际经验",
+      "patterns": [
+        "你在项目中具体是怎么配置{technology}的？",
+        "遇到{problem}时，排查的步骤是什么？",
+        "能说说具体的性能指标吗？比如QPS、延迟等",
+        "代码是怎么写的？能描述一下关键逻辑吗？",
+        "上线后遇到过什么问题吗？"
+      ]
+    }
+  },
+  
+  "scenario_questions": {
+    "description": "场景化问题模板",
+    "patterns": [
+      "如果系统出现{problem}，你会如何排查和解决？",
+      "假设需要支持{requirement}，你会如何设计？",
+      "在{constraint}的约束下，如何实现{goal}？",
+      "如何权衡{aspect1}和{aspect2}？",
+      "如果要优化{metric}，你会从哪些方面入手？"
+    ]
+  }
+}
