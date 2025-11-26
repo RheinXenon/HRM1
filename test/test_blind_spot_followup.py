@@ -54,10 +54,11 @@ def test_blind_spot_followup():
             ]
         },
         personality={
-            "communication": {"verbose": 60, "technical": 70},
-            "response": {"confidence": 80, "storytelling": 50},
-            "emotion": {"nervousness": 20, "enthusiasm": 70},
-            "self_perception": {"self_awareness": 30}  # 低自知之明
+            "openness": 0.65,
+            "conscientiousness": 0.40,  # 低尽责性
+            "extraversion": 0.75,
+            "agreeableness": 0.50,
+            "neuroticism": 0.25  # 低神经质 -> 容易过度自信
         },
         knowledge_blind_spots={
             "overconfident_areas": [
@@ -74,7 +75,8 @@ def test_blind_spot_followup():
     
     print(f"📋 候选人: {candidate_profile.name}")
     print(f"   React 技能: actual_level={candidate_profile.knowledge_blind_spots['overconfident_areas'][0]['actual_level']}/10")
-    print(f"   自知之明: {candidate_profile.personality['self_perception']['self_awareness']}/100")
+    print(f"   人格特质: 尽责性={candidate_profile.personality['conscientiousness']:.2f}, 神经质={candidate_profile.personality['neuroticism']:.2f}")
+    print(f"   倾向: 低尽责性+低神经质 -> 容易过度自信")
     print()
     
     # 创建LLM客户端和Agent

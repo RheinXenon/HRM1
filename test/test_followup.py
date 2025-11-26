@@ -28,7 +28,8 @@ def test_overconfident_with_followup():
     profile = candidate_config['profile']
     
     print(f"📋 候选人: {profile['name']}")
-    print(f"   自知之明: {profile['personality']['self_perception']['self_awareness']}/100")
+    p = profile['personality']
+    print(f"   人格特质: C={p.get('conscientiousness', 0.5):.2f}, N={p.get('neuroticism', 0.5):.2f}")
     print()
     
     print("🔴 知识盲区:")

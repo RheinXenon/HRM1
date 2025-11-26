@@ -101,11 +101,11 @@ def select_personality_strategy() -> tuple:
     print()
     print("可选的性格原型:")
     print("5. confident - 自信型")
-    print("6. nervous - 紧张型")
-    print("7. technical - 技术型")
-    print("8. storyteller - 叙事型")
-    print("9. enthusiastic - 热情型")
-    print("10. reserved - 保守型")
+    print("6. anxious - 焦虑型")
+    print("7. creative - 创造型")
+    print("8. reliable - 可靠型")
+    print("9. friendly - 友善型")
+    print("10. analytical - 分析型")
     
     choice = input("\n请选择 (1-10, 默认1-normal): ").strip() or "1"
     
@@ -115,11 +115,11 @@ def select_personality_strategy() -> tuple:
         "3": ("extreme", None),
         "4": ("uniform", None),
         "5": ("archetype", "confident"),
-        "6": ("archetype", "nervous"),
-        "7": ("archetype", "technical"),
-        "8": ("archetype", "storyteller"),
-        "9": ("archetype", "enthusiastic"),
-        "10": ("archetype", "reserved")
+        "6": ("archetype", "anxious"),
+        "7": ("archetype", "creative"),
+        "8": ("archetype", "reliable"),
+        "9": ("archetype", "friendly"),
+        "10": ("archetype", "analytical")
     }
     
     return strategy_map.get(choice, ("normal", None))
@@ -231,8 +231,11 @@ def run_interview(
         # 显示性格特征（如果有）
         if 'personality' in candidate_config['profile']:
             personality = candidate_config['profile']['personality']
-            print(f"   性格: confidence={personality.get('confidence', 50)}, "
-                  f"nervousness={personality.get('nervousness', 50)}")
+            print(f"   人格: O={personality.get('openness', 0.5):.2f}, "
+                  f"C={personality.get('conscientiousness', 0.5):.2f}, "
+                  f"E={personality.get('extraversion', 0.5):.2f}, "
+                  f"A={personality.get('agreeableness', 0.5):.2f}, "
+                  f"N={personality.get('neuroticism', 0.5):.2f}")
         print()
         
         # 3. 创建面试引擎

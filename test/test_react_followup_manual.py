@@ -31,7 +31,8 @@ def main():
     
     print(f"📋 候选人: {profile.name}")
     print(f"   React 技能: actual_level=3/10, perceived_level=7/10")
-    print(f"   自知之明: {profile.personality['self_perception']['self_awareness']}/100")
+    p = profile.personality
+    print(f"   人格特质: C={p.get('conscientiousness', 0.5):.2f}, N={p.get('neuroticism', 0.5):.2f}")
     print()
     
     # 创建Agent

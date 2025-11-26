@@ -305,7 +305,7 @@ def run_random_test_full_mode(num_candidates: int = 10, seed: int = None):
         print(f"   级别: {level}")
         print(f"   技能数: {len(true_skills)}")
         print(f"   平均技能分: {sum(true_skills.values()) / len(true_skills):.1f}/10")
-        print(f"   自知之明: {personality['self_perception']['self_awareness']}/100")
+        print(f"   人格特质: C={personality.get('conscientiousness', 0.5):.2f}, N={personality.get('neuroticism', 0.5):.2f}")
         
         try:
             # 执行面试 - 使用FULL模式
