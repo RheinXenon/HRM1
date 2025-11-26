@@ -24,11 +24,11 @@ class RandomCandidateGenerator:
             seed: 随机种子
             domain_id: 领域ID，用于加载对应的技能分类
         """
-        if seed:
+        if seed is not None:
             random.seed(seed)
         
-        # 加载领域配置
-        self.domain = DomainLoader(domain_id)
+        # 加载领域配置（使用单例模式）
+        self.domain = DomainLoader.get_instance(domain_id)
         self.skill_categories = self.domain.get_skill_categories()
     
     def generate_skills(self, level: str = "mid", num_skills: int = None) -> Dict[str, int]:
@@ -321,8 +321,8 @@ class RandomCompanyGenerator:
             random.seed(seed)
         self.domain_id = domain_id
         
-        # 加载领域配置
-        self.domain = DomainLoader(domain_id)
+        # 加载领域配置（使用单例模式）
+        self.domain = DomainLoader.get_instance(domain_id)
         domain_config = self.domain.get_domain_config()
         self.domain_name = domain_config.get("domain_name", domain_id)
         self.description = domain_config.get("description", "")

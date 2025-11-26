@@ -52,11 +52,9 @@ class InterviewerAgent:
 
         # Phase 1: 初始化评分标准化器
         self.score_normalizer = ScoreNormalizer()
-        logger.info("✅ 评分标准化器已加载")
         
-        # 加载领域配置
-        self.domain = DomainLoader(domain_id)
-        logger.info(f"✅ 领域配置已加载: {self.domain.domain_id}")
+        # 加载领域配置（使用单例模式，避免重复加载）
+        self.domain = DomainLoader.get_instance(domain_id)
         
     def generate_interview_script(self, candidate_level: str = "senior") -> List[InterviewQuestion]:
         """

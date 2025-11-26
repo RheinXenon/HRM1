@@ -20,6 +20,7 @@ from config import load_candidate_template, generate_domain_config
 from core.personality_generator import PersonalityGenerator
 from core.random_generator import RandomCandidateGenerator
 from dataclasses import asdict
+from domains import list_available_domains
 
 # 页面配置
 st.set_page_config(
@@ -27,6 +28,12 @@ st.set_page_config(
     page_icon="🎮",
     layout="wide"
 )
+
+# 缓存领域列表加载
+@st.cache_data
+def get_cached_domains():
+    """缓存的领域列表加载"""
+    return list_available_domains()
 
 # 初始化session_state
 if 'controller' not in st.session_state:

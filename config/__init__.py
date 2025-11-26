@@ -89,8 +89,8 @@ def generate_domain_config(domain_id: str = "tech") -> Tuple[Dict, Dict]:
     """
     from domains import DomainLoader
     
-    # 加载领域配置
-    domain_loader = DomainLoader(domain_id)
+    # 加载领域配置（使用单例模式）
+    domain_loader = DomainLoader.get_instance(domain_id)
     domain_config = domain_loader.get_domain_config()
     skills_taxonomy = domain_loader.get_skills_taxonomy()
     

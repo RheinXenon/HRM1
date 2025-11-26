@@ -11,22 +11,27 @@ from loguru import logger
 
 DOMAINS_DIR = Path(__file__).parent
 
+# 全局缓存：避免重复创建 DomainLoader
+_DOMAIN_LOADER_CACHE = {}
+
 
 class DomainLoader:
     """领域配置加载器"""
     
-    def __init__(self, domain_id: str = "tech"):
+    def __init__(self, domain_id: str = "tech", _from_cache: bool = False):
         """
         初始化领域加载器
         
         Args:
             domain_id: 领域ID（tech, marketing, healthcare等）
+            _from_cache: 内部参数，标记是否从缓存创建
         """
         self.domain_id = domain_id
         self.domain_path = DOMAINS_DIR / domain_id
         
         if not self.domain_path.exists():
-            logger.warning(f"领域 '{domain_id}' 不存在，使用默认领域 'tech'")
+            if not _from_cache:
+                logger.warning(f"领域 '{domain_id}' 不存在，使用默认领域 'tech'")
             self.domain_id = "tech"
             self.domain_path = DOMAINS_DIR / "tech"
         
@@ -35,7 +40,24 @@ class DomainLoader:
         self._assessment_signals = None
         self._question_templates = None
         
-        logger.info(f"加载领域配置: {self.domain_id}")
+        # 只在首次加载时打印日志
+        if not _from_cache:
+            logger.info(f"✅ 首次加载领域配置: {self.domain_id}")
+    
+    @classmethod
+    def get_instance(cls, domain_id: str = "tech") -> 'DomainLoader':
+        """
+        获取 DomainLoader 实例（单例模式）
+        
+        Args:
+            domain_id: 领域ID
+            
+        Returns:
+            缓存的或新创建的 DomainLoader 实例
+        """
+        if domain_id not in _DOMAIN_LOADER_CACHE:
+            _DOMAIN_LOADER_CACHE[domain_id] = cls(domain_id, _from_cache=False)
+        return _DOMAIN_LOADER_CACHE[domain_id]
     
     def _load_json(self, filename: str) -> Dict:
         """加载JSON配置文件"""
@@ -176,15 +198,26 @@ def get_domain_info(domain_id: str) -> Optional[Dict]:
         领域配置字典，如果不存在返回None
     """
     try:
-        loader = DomainLoader(domain_id)
+        loader = DomainLoader.get_instance(domain_id)
         return loader.get_domain_config()
     except Exception as e:
         logger.error(f"获取领域信息失败: {domain_id}, 错误: {e}")
         return None
 
 
+def clear_domain_cache():
+    """
+    清空领域配置缓存
+    通常用于测试或需要重新加载配置的场景
+    """
+    global _DOMAIN_LOADER_CACHE
+    _DOMAIN_LOADER_CACHE.clear()
+    logger.info("✅ 已清空领域配置缓存")
+
+
 __all__ = [
     'DomainLoader',
     'list_available_domains',
-    'get_domain_info'
+    'get_domain_info',
+    'clear_domain_cache'
 ]

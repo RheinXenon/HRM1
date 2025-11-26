@@ -36,6 +36,7 @@ class InterviewController:
         self.current_interview = None
         self.stop_flag = threading.Event()
         self.pause_flag = threading.Event()
+        self._domain_config_cache = {}  # 缓存领域配置
         
     def start_interview(
         self,
@@ -121,6 +122,13 @@ class InterviewController:
         try:
             total_candidates = len(candidate_configs)
             
+            # 一次性加载领域配置，所有候选人共用
+            if domain_id not in self._domain_config_cache:
+                company_config, job_config = generate_domain_config(domain_id)
+                self._domain_config_cache[domain_id] = (company_config, job_config)
+            else:
+                company_config, job_config = self._domain_config_cache[domain_id]
+            
             for idx, candidate_config in enumerate(candidate_configs, 1):
                 # 检查中止标志
                 if self.stop_flag.is_set():
@@ -133,9 +141,6 @@ class InterviewController:
                 
                 # 创建面试引擎
                 self.engine = InterviewEngine()
-                
-                # 生成领域配置
-                company_config, job_config = generate_domain_config(domain_id)
                 
                 # 发送候选人信息
                 profile = candidate_config.get("profile", candidate_config)
