@@ -23,22 +23,11 @@
       ]
     },
     "personality": {
-      "communication": {
-        "verbose": 60,
-        "technical": 70
-      },
-      "response": {
-        "confidence": 80,
-        "detail_orientation": 50,
-        "storytelling": 50
-      },
-      "emotion": {
-        "nervousness": 20,
-        "enthusiasm": 70
-      },
-      "self_perception": {
-        "self_awareness": 30
-      }
+      "openness": 0.65,
+      "conscientiousness": 0.50,
+      "extraversion": 0.75,
+      "agreeableness": 0.50,
+      "neuroticism": 0.25
     },
     "knowledge_blind_spots": {
       "overconfident_areas": [

@@ -276,41 +276,19 @@ class CandidateAgent:
                 for i, proj in enumerate(exp['projects'][:3], 1):  # 最多显示3个
                     work_experience += f"{i}. {proj.get('name', '项目')}: {proj.get('role', '开发者')} - {proj.get('achievement', '完成项目开发')}\n"
         
-        # 格式化性格特质
+        # 格式化大五人格特质
         personality_traits = format_personality_traits(self.profile.personality)
-        
-        # 获取性格参数用于模板
-        personality = self.profile.personality
-        comm = personality.get("communication", {})
-        resp = personality.get("response", {})
-        emot = personality.get("emotion", {})
-        self_perc = personality.get("self_perception", {})
-        
-        verbose = comm.get("verbose", 50)
-        technical = comm.get("technical", 50)
-        confidence = resp.get("confidence", 50)
-        nervousness = emot.get("nervousness", 20)
-        storytelling = resp.get("storytelling", 50)
-        enthusiasm = emot.get("enthusiasm", 70)
-        self_awareness = self_perc.get("self_awareness", 50)
         
         # 格式化知识盲区
         knowledge_blind_spots = self._format_knowledge_blind_spots()
         
         # 构建完整提示词
         system_prompt = CANDIDATE_SYSTEM_PROMPT.format(
-            candidate_name=self.profile.name,  # 传递候选人真实姓名
+            candidate_name=self.profile.name,
             skill_profile=skill_profile,
             work_experience=work_experience,
             personality_traits=personality_traits,
-            knowledge_blind_spots=knowledge_blind_spots,
-            verbose=verbose,
-            technical=technical,
-            confidence=confidence,
-            nervousness=nervousness,
-            storytelling=storytelling,
-            enthusiasm=enthusiasm,
-            self_awareness=self_awareness
+            knowledge_blind_spots=knowledge_blind_spots
         )
         
         return system_prompt

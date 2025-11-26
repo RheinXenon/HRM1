@@ -129,24 +129,32 @@ class RandomCandidateGenerator:
     def generate_knowledge_blind_spots(
         self, 
         skills: Dict[str, int],
-        self_awareness: int
+        personality: Dict[str, float]
     ) -> Optional[Dict[str, List]]:
         """
-        生成知识盲区（基于自知之明程度）
+        生成知识盲区（基于大五人格特质）
         
         Args:
             skills: 技能评分
-            self_awareness: 自知之明分数 (0-100)
+            personality: 大五人格配置 (包含 conscientiousness 和 neuroticism)
             
         Returns:
             知识盲区配置
         """
-        # 自知之明高（>70）：很少盲区
-        # 自知之明中（40-70）：可能有些过度自信或谦虚
-        # 自知之明低（<40）：容易不懂装懂
+        # 根据大五人格计算自知之明倾向:
+        # - 尽责性高 + 神经质低 = 自我认知准确（很少盲区）
+        # - 尽责性低 + 神经质低 = 容易过度自信（不懂装懂）
+        # - 尽责性高 + 神经质高 = 容易过度谦虚（低估自己）
         
-        if self_awareness > 70:
-            # 高自知，很少盲区
+        conscientiousness = personality.get("conscientiousness", 0.5)
+        neuroticism = personality.get("neuroticism", 0.5)
+        
+        # 计算倾向分数
+        overconfidence_tendency = (1 - conscientiousness) * (1 - neuroticism)  # 尽责性低、神经质低
+        underconfidence_tendency = conscientiousness * neuroticism  # 尽责性高、神经质高
+        
+        # 高自我认知（尽责性高且神经质适中）
+        if conscientiousness > 0.7 and 0.3 < neuroticism < 0.6:
             if random.random() > 0.7:
                 return None
         
@@ -158,8 +166,8 @@ class RandomCandidateGenerator:
         # 选择一些技能作为盲区
         skill_items = list(skills.items())
         
-        if self_awareness < 40:
-            # 低自知，容易过度自信
+        if overconfidence_tendency > 0.5:
+            # 容易过度自信
             num_overconfident = random.randint(2, 4)
             for _ in range(num_overconfident):
                 if not skill_items:
@@ -177,8 +185,26 @@ class RandomCandidateGenerator:
                         "description": f"实际经验有限，但容易高估自己在{skill}方面的能力"
                     })
         
-        elif self_awareness >= 40 and self_awareness <= 70:
-            # 中等自知，可能有轻微过度自信或谦虚
+        elif underconfidence_tendency > 0.5:
+            # 容易过度谦虚
+            num_underconfident = random.randint(1, 3)
+            for _ in range(num_underconfident):
+                if not skill_items:
+                    break
+                skill, actual_level = random.choice(skill_items)
+                skill_items.remove((skill, actual_level))
+                
+                if actual_level >= 6:
+                    perceived_level = actual_level - random.randint(1, 3)
+                    blind_spots["underconfident_areas"].append({
+                        "skill": skill,
+                        "actual_level": actual_level,
+                        "perceived_level": max(0, perceived_level),
+                        "description": f"实际能力不错，但对{skill}不够自信"
+                    })
+        
+        else:
+            # 中等自知，可能有轻微盲区
             if random.random() > 0.5:
                 # 1-2个过度自信
                 num_overconfident = random.randint(1, 2)
@@ -208,19 +234,6 @@ class RandomCandidateGenerator:
                             "perceived_level": max(0, perceived_level),
                             "description": f"在{skill}方面有扎实能力，但容易低估自己"
                         })
-        
-        else:
-            # 高自知（>70），可能有轻微过度谦虚
-            if random.random() > 0.6 and skill_items:
-                skill, actual_level = random.choice(skill_items)
-                if actual_level >= 6:
-                    perceived_level = actual_level - random.randint(1, 3)
-                    blind_spots["underconfident_areas"].append({
-                        "skill": skill,
-                        "actual_level": actual_level,
-                        "perceived_level": max(0, perceived_level),
-                        "description": f"实际能力不错，但对{skill}不够自信"
-                    })
         
         # 如果没有盲区，返回None
         if not blind_spots["overconfident_areas"] and not blind_spots["underconfident_areas"]:
@@ -263,11 +276,8 @@ class RandomCandidateGenerator:
             personality_config = pg.generate_random("normal")
             personality = personality_config.to_dict()
         
-        # 获取自知之明值
-        self_awareness = personality.get("self_perception", {}).get("self_awareness", 50)
-        
-        # 生成知识盲区
-        blind_spots = self.generate_knowledge_blind_spots(skills, self_awareness)
+        # 生成知识盲区（基于大五人格特质）
+        blind_spots = self.generate_knowledge_blind_spots(skills, personality)
         
         config = {
             "template_name": f"随机候选人-{level}",

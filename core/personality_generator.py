@@ -1,6 +1,6 @@
 """
-性格生成器
-随机生成候选人的性格特质参数
+性格生成器 - 基于大五人格模型（Big Five Personality Model）
+支持外部模型传入的人格评估数据
 """
 
 import random
@@ -13,44 +13,93 @@ from loguru import logger
 
 @dataclass
 class PersonalityConfig:
-    """性格配置类"""
-    communication: Dict[str, int]
-    response: Dict[str, int]
-    emotion: Dict[str, int]
-    self_perception: Dict[str, int]
+    """
+    大五人格配置类（Big Five Personality Traits）
     
-    def to_dict(self) -> Dict[str, Any]:
+    所有维度分数范围: 0.0-1.0
+    - Openness (开放性): 好奇心、想象力、对新体验的开放程度
+    - Conscientiousness (尽责性): 组织性、可靠性、自律性
+    - Extraversion (外向性): 社交性、活力、主导性
+    - Agreeableness (宜人性): 合作性、信任、同情心
+    - Neuroticism (神经质): 情绪不稳定性、焦虑、易激动（分数越高越不稳定）
+    """
+    openness: float  # 开放性 (0.0-1.0)
+    conscientiousness: float  # 尽责性 (0.0-1.0)
+    extraversion: float  # 外向性 (0.0-1.0)
+    agreeableness: float  # 宜人性 (0.0-1.0)
+    neuroticism: float  # 神经质 (0.0-1.0)
+    
+    def to_dict(self) -> Dict[str, float]:
         """转换为字典格式"""
         return {
-            "communication": self.communication,
-            "response": self.response,
-            "emotion": self.emotion,
-            "self_perception": self.self_perception
+            "openness": round(self.openness, 3),
+            "conscientiousness": round(self.conscientiousness, 3),
+            "extraversion": round(self.extraversion, 3),
+            "agreeableness": round(self.agreeableness, 3),
+            "neuroticism": round(self.neuroticism, 3)
         }
+    
+    @classmethod
+    def from_dict(cls, data: Dict[str, float]) -> 'PersonalityConfig':
+        """从字典创建人格配置"""
+        return cls(
+            openness=data.get("openness", 0.5),
+            conscientiousness=data.get("conscientiousness", 0.5),
+            extraversion=data.get("extraversion", 0.5),
+            agreeableness=data.get("agreeableness", 0.5),
+            neuroticism=data.get("neuroticism", 0.5)
+        )
+    
+    @classmethod
+    def from_external_model(cls, model_results: Dict[str, float]) -> 'PersonalityConfig':
+        """
+        从外部人格评估模型的结果创建人格配置
+        
+        Args:
+            model_results: 外部模型返回的结果，格式为 {label: score}
+                          label可以是中文或英文，score范围0-1
+        
+        Returns:
+            PersonalityConfig实例
+        """
+        # 标签映射（支持中英文）
+        label_mapping = {
+            # 英文
+            "openness": "openness",
+            "conscientiousness": "conscientiousness",
+            "extraversion": "extraversion",
+            "agreeableness": "agreeableness",
+            "neuroticism": "neuroticism",
+            # 中文
+            "开放性": "openness",
+            "尽责性": "conscientiousness",
+            "外向性": "extraversion",
+            "宜人性": "agreeableness",
+            "神经质": "neuroticism",
+        }
+        
+        normalized_data = {}
+        for label, score in model_results.items():
+            # 标准化标签（转小写）
+            label_lower = label.lower()
+            if label_lower in label_mapping:
+                trait = label_mapping[label_lower]
+                # 确保分数在0-1范围内
+                normalized_data[trait] = max(0.0, min(1.0, float(score)))
+            elif label in label_mapping:
+                # 中文标签
+                trait = label_mapping[label]
+                normalized_data[trait] = max(0.0, min(1.0, float(score)))
+        
+        logger.info(f"📊 从外部模型加载人格数据: {len(normalized_data)}/5 个维度")
+        return cls.from_dict(normalized_data)
 
 
 class PersonalityGenerator:
-    """性格生成器类"""
-    
-    # 性格维度定义及其合理范围
-    DIMENSIONS = {
-        "communication": {
-            "verbose": (20, 90),      # 啰嗦程度：20-90
-            "technical": (30, 95)     # 技术用词：30-95
-        },
-        "response": {
-            "confidence": (30, 95),         # 自信度：30-95
-            "detail_orientation": (30, 90), # 细节程度：30-90
-            "storytelling": (20, 85)        # 叙事能力：20-85
-        },
-        "emotion": {
-            "nervousness": (5, 70),    # 紧张度：5-70
-            "enthusiasm": (30, 95)     # 热情度：30-95
-        },
-        "self_perception": {
-            "self_awareness": (20, 95)  # 自知之明：20-95，低值易不懂装懂，高值易过度谦虚
-        }
-    }
+    """
+    大五人格生成器类
+    生成符合Big Five模型的人格配置
+    """
     
     def __init__(self, seed: Optional[int] = None):
         """
@@ -63,51 +112,46 @@ class PersonalityGenerator:
             random.seed(seed)
             logger.info(f"🎲 使用随机种子: {seed}")
     
-    def generate_random(self, strategy: str = "balanced") -> PersonalityConfig:
+    def generate_random(self, strategy: str = "normal") -> PersonalityConfig:
         """
-        生成随机性格
+        生成随机大五人格配置
         
         Args:
             strategy: 生成策略
-                - "balanced": 平衡型，所有参数接近中间值
+                - "balanced": 平衡型，所有参数接近0.5
                 - "extreme": 极端型，参数偏向极值
                 - "uniform": 均匀分布
-                - "normal": 正态分布（更真实）
+                - "normal": 正态分布（默认，更真实）
                 
         Returns:
             生成的性格配置
         """
-        logger.info(f"🎲 生成随机性格 [策略: {strategy}]")
+        logger.info(f"🎲 生成随机大五人格 [策略: {strategy}]")
         
-        personality = {}
+        traits = {}
         
-        for category, dimensions in self.DIMENSIONS.items():
-            personality[category] = {}
-            for dim_name, (min_val, max_val) in dimensions.items():
-                if strategy == "balanced":
-                    # 平衡型：中心值 ± 20%波动
-                    center = (min_val + max_val) // 2
-                    value = self._generate_balanced(center, min_val, max_val)
-                    
-                elif strategy == "extreme":
-                    # 极端型：更容易出现极值
-                    value = self._generate_extreme(min_val, max_val)
-                    
-                elif strategy == "normal":
-                    # 正态分布：更符合真实人群
-                    value = self._generate_normal(min_val, max_val)
-                    
-                else:  # uniform
-                    # 均匀分布：完全随机
-                    value = random.randint(min_val, max_val)
-                
-                personality[category][dim_name] = value
+        for trait_name in ["openness", "conscientiousness", "extraversion", "agreeableness", "neuroticism"]:
+            if strategy == "balanced":
+                # 平衡型：0.5 ± 0.15
+                value = self._generate_balanced_float(0.5, 0.0, 1.0)
+            elif strategy == "extreme":
+                # 极端型：更容易出现极值
+                value = self._generate_extreme_float()
+            elif strategy == "normal":
+                # 正态分布：更符合真实人群
+                value = self._generate_normal_float()
+            else:  # uniform
+                # 均匀分布：完全随机
+                value = random.uniform(0.0, 1.0)
+            
+            traits[trait_name] = value
         
         config = PersonalityConfig(
-            communication=personality["communication"],
-            response=personality["response"],
-            emotion=personality["emotion"],
-            self_perception=personality["self_perception"]
+            openness=traits["openness"],
+            conscientiousness=traits["conscientiousness"],
+            extraversion=traits["extraversion"],
+            agreeableness=traits["agreeableness"],
+            neuroticism=traits["neuroticism"]
         )
         
         self._log_personality(config)
@@ -115,116 +159,101 @@ class PersonalityGenerator:
     
     def generate_archetype(self, archetype: str) -> PersonalityConfig:
         """
-        生成预设原型性格（带随机波动）
+        生成预设原型大五人格（带随机波动）
         
         Args:
             archetype: 原型名称
-                - "confident": 自信型
-                - "nervous": 紧张型
-                - "technical": 技术型
-                - "storyteller": 叙事型
-                - "enthusiastic": 热情型
-                - "reserved": 保守型
+                - "confident": 自信型 (高外向性，低神经质)
+                - "anxious": 焦虑型 (高神经质，低外向性)
+                - "creative": 创造型 (高开放性)
+                - "reliable": 可靠型 (高尽责性)
+                - "friendly": 友善型 (高宜人性，高外向性)
+                - "analytical": 分析型 (高尽责性，高开放性)
                 
         Returns:
             生成的性格配置
         """
-        logger.info(f"🎭 生成原型性格: {archetype}")
+        logger.info(f"🎭 生成原型大五人格: {archetype}")
         
+        # 基于大五人格的原型定义 (O, C, E, A, N)
         archetypes = {
             "confident": {
-                "communication": {"verbose": 60, "technical": 75},
-                "response": {"confidence": 90, "detail_orientation": 70, "storytelling": 60},
-                "emotion": {"nervousness": 10, "enthusiasm": 80},
-                "self_perception": {"self_awareness": 50}  # 中等自知，容易不懂装懂
+                "openness": 0.65, "conscientiousness": 0.70, 
+                "extraversion": 0.80, "agreeableness": 0.60, "neuroticism": 0.20
             },
-            "nervous": {
-                "communication": {"verbose": 40, "technical": 50},
-                "response": {"confidence": 40, "detail_orientation": 60, "storytelling": 40},
-                "emotion": {"nervousness": 65, "enthusiasm": 45},
-                "self_perception": {"self_awareness": 80}  # 高自知，容易过度谦虚
+            "anxious": {
+                "openness": 0.50, "conscientiousness": 0.65,
+                "extraversion": 0.30, "agreeableness": 0.55, "neuroticism": 0.75
             },
-            "technical": {
-                "communication": {"verbose": 70, "technical": 90},
-                "response": {"confidence": 75, "detail_orientation": 85, "storytelling": 50},
-                "emotion": {"nervousness": 25, "enthusiasm": 65},
-                "self_perception": {"self_awareness": 70}
+            "creative": {
+                "openness": 0.85, "conscientiousness": 0.55,
+                "extraversion": 0.65, "agreeableness": 0.60, "neuroticism": 0.45
             },
-            "storyteller": {
-                "communication": {"verbose": 80, "technical": 55},
-                "response": {"confidence": 70, "detail_orientation": 60, "storytelling": 85},
-                "emotion": {"nervousness": 20, "enthusiasm": 85},
-                "self_perception": {"self_awareness": 70}
+            "reliable": {
+                "openness": 0.55, "conscientiousness": 0.85,
+                "extraversion": 0.50, "agreeableness": 0.70, "neuroticism": 0.30
             },
-            "enthusiastic": {
-                "communication": {"verbose": 75, "technical": 65},
-                "response": {"confidence": 80, "detail_orientation": 60, "storytelling": 70},
-                "emotion": {"nervousness": 15, "enthusiasm": 92},
-                "self_perception": {"self_awareness": 60}
+            "friendly": {
+                "openness": 0.60, "conscientiousness": 0.60,
+                "extraversion": 0.80, "agreeableness": 0.85, "neuroticism": 0.35
             },
-            "reserved": {
-                "communication": {"verbose": 35, "technical": 70},
-                "response": {"confidence": 55, "detail_orientation": 75, "storytelling": 45},
-                "emotion": {"nervousness": 40, "enthusiasm": 40},
-                "self_perception": {"self_awareness": 75}
+            "analytical": {
+                "openness": 0.75, "conscientiousness": 0.80,
+                "extraversion": 0.45, "agreeableness": 0.50, "neuroticism": 0.40
             }
         }
         
         if archetype not in archetypes:
-            logger.warning(f"未知原型 '{archetype}'，使用 'balanced' 策略")
-            return self.generate_random("balanced")
+            logger.warning(f"未知原型 '{archetype}'，使用 'normal' 策略")
+            return self.generate_random("normal")
         
         base = archetypes[archetype]
         
-        # 在原型基础上添加 ±15 的随机波动
-        personality = {}
-        for category in ["communication", "response", "emotion", "self_perception"]:
-            personality[category] = {}
-            for dim_name, base_value in base[category].items():
-                # 获取合理范围
-                min_val, max_val = self.DIMENSIONS[category][dim_name]
-                # 添加波动
-                value = base_value + random.randint(-15, 15)
-                # 确保在合理范围内
-                value = max(min_val, min(max_val, value))
-                personality[category][dim_name] = value
+        # 在原型基础上添加 ±0.1 的随机波动
+        traits = {}
+        for trait_name, base_value in base.items():
+            # 添加波动
+            value = base_value + random.uniform(-0.1, 0.1)
+            # 确保在0-1范围内
+            value = max(0.0, min(1.0, value))
+            traits[trait_name] = value
         
         config = PersonalityConfig(
-            communication=personality["communication"],
-            response=personality["response"],
-            emotion=personality["emotion"],
-            self_perception=personality["self_perception"]
+            openness=traits["openness"],
+            conscientiousness=traits["conscientiousness"],
+            extraversion=traits["extraversion"],
+            agreeableness=traits["agreeableness"],
+            neuroticism=traits["neuroticism"]
         )
         
         self._log_personality(config)
         return config
     
-    def _generate_balanced(self, center: int, min_val: int, max_val: int) -> int:
-        """生成平衡型数值（中心值附近波动）"""
+    def _generate_balanced_float(self, center: float, min_val: float, max_val: float) -> float:
+        """生成平衡型浮点数值（中心值附近波动）"""
         range_size = max_val - min_val
-        deviation = int(range_size * 0.2)  # 20% 波动
-        value = center + random.randint(-deviation, deviation)
+        deviation = range_size * 0.15  # 15% 波动
+        value = center + random.uniform(-deviation, deviation)
         return max(min_val, min(max_val, value))
     
-    def _generate_extreme(self, min_val: int, max_val: int) -> int:
-        """生成极端型数值（更容易出现极值）"""
+    def _generate_extreme_float(self) -> float:
+        """生成极端型浮点数值（更容易出现极值）"""
         # 使用 beta 分布模拟（简化版）
         rand = random.random()
-        if rand < 0.3:  # 30% 概率低值
-            return random.randint(min_val, min_val + (max_val - min_val) // 3)
-        elif rand < 0.6:  # 30% 概率高值
-            return random.randint(min_val + 2 * (max_val - min_val) // 3, max_val)
-        else:  # 40% 概率中间值
-            return random.randint(min_val + (max_val - min_val) // 3, 
-                                 min_val + 2 * (max_val - min_val) // 3)
+        if rand < 0.3:  # 30% 概率低值 (0.0-0.3)
+            return random.uniform(0.0, 0.3)
+        elif rand < 0.6:  # 30% 概率高值 (0.7-1.0)
+            return random.uniform(0.7, 1.0)
+        else:  # 40% 概率中间值 (0.3-0.7)
+            return random.uniform(0.3, 0.7)
     
-    def _generate_normal(self, min_val: int, max_val: int) -> int:
-        """生成正态分布数值（更符合真实情况）"""
-        center = (min_val + max_val) / 2
-        std_dev = (max_val - min_val) / 6  # 99.7% 数据在 ±3σ 内
+    def _generate_normal_float(self) -> float:
+        """生成正态分布浮点数值（更符合真实情况）"""
+        center = 0.5
+        std_dev = 0.15  # 标准差，大约95%数据在0.2-0.8范围内
         
-        value = int(random.gauss(center, std_dev))
-        return max(min_val, min(max_val, value))
+        value = random.gauss(center, std_dev)
+        return max(0.0, min(1.0, value))
     
     def save_personality(
         self,
@@ -255,16 +284,13 @@ class PersonalityGenerator:
         return str(filepath)
     
     def _log_personality(self, config: PersonalityConfig):
-        """记录生成的性格特征"""
-        logger.debug("生成的性格参数:")
-        logger.debug(f"  沟通: verbose={config.communication['verbose']}, "
-                    f"technical={config.communication['technical']}")
-        logger.debug(f"  回答: confidence={config.response['confidence']}, "
-                    f"detail={config.response['detail_orientation']}, "
-                    f"storytelling={config.response['storytelling']}")
-        logger.debug(f"  情绪: nervousness={config.emotion['nervousness']}, "
-                    f"enthusiasm={config.emotion['enthusiasm']}")
-        logger.debug(f"  自我认知: self_awareness={config.self_perception['self_awareness']}")
+        """记录生成的大五人格特征"""
+        logger.debug("生成的大五人格参数:")
+        logger.debug(f"  开放性 (Openness): {config.openness:.3f}")
+        logger.debug(f"  尽责性 (Conscientiousness): {config.conscientiousness:.3f}")
+        logger.debug(f"  外向性 (Extraversion): {config.extraversion:.3f}")
+        logger.debug(f"  宜人性 (Agreeableness): {config.agreeableness:.3f}")
+        logger.debug(f"  神经质 (Neuroticism): {config.neuroticism:.3f}")
 
 
 def create_random_candidate_config(
@@ -310,28 +336,60 @@ def create_random_candidate_config(
 
 # 命令行测试工具
 if __name__ == "__main__":
-    print("🎲 性格生成器测试\n")
+    print("🎲 大五人格生成器测试\n")
     
     generator = PersonalityGenerator(seed=42)
     
     strategies = ["balanced", "extreme", "normal", "uniform"]
     
-    print("=" * 60)
+    print("=" * 70)
     print("测试不同生成策略:")
-    print("=" * 60)
+    print("=" * 70)
     
     for strategy in strategies:
         print(f"\n策略: {strategy}")
         config = generator.generate_random(strategy)
         print(json.dumps(config.to_dict(), indent=2, ensure_ascii=False))
     
-    print("\n" + "=" * 60)
-    print("测试原型性格:")
-    print("=" * 60)
+    print("\n" + "=" * 70)
+    print("测试原型人格:")
+    print("=" * 70)
     
-    archetypes = ["confident", "nervous", "technical", "storyteller"]
+    archetypes = ["confident", "anxious", "creative", "reliable", "friendly", "analytical"]
     
     for archetype in archetypes:
         print(f"\n原型: {archetype}")
         config = generator.generate_archetype(archetype)
         print(json.dumps(config.to_dict(), indent=2, ensure_ascii=False))
+    
+    print("\n" + "=" * 70)
+    print("测试从外部模型加载人格数据:")
+    print("=" * 70)
+    
+    # 模拟外部模型返回的数据
+    external_results = {
+        "openness": 0.75,
+        "conscientiousness": 0.82,
+        "extraversion": 0.65,
+        "agreeableness": 0.58,
+        "neuroticism": 0.35
+    }
+    
+    print(f"\n外部模型输入: {external_results}")
+    config = PersonalityConfig.from_external_model(external_results)
+    print("\n解析后的配置:")
+    print(json.dumps(config.to_dict(), indent=2, ensure_ascii=False))
+    
+    # 测试中文标签
+    external_results_cn = {
+        "开放性": 0.68,
+        "尽责性": 0.72,
+        "外向性": 0.55,
+        "宜人性": 0.78,
+        "神经质": 0.42
+    }
+    
+    print(f"\n\n外部模型输入（中文）: {external_results_cn}")
+    config_cn = PersonalityConfig.from_external_model(external_results_cn)
+    print("\n解析后的配置:")
+    print(json.dumps(config_cn.to_dict(), indent=2, ensure_ascii=False))

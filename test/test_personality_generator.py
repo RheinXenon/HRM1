@@ -1,6 +1,6 @@
 """
-测试性格生成器
-展示不同策略和原型的性格生成效果
+测试大五人格生成器
+展示不同策略和原型的人格生成效果
 """
 
 import sys
@@ -10,14 +10,14 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
-from core.personality_generator import PersonalityGenerator, create_random_candidate_config
+from core.personality_generator import PersonalityGenerator, create_random_candidate_config, PersonalityConfig
 import json
 
 
 def test_strategies():
     """测试不同生成策略"""
     print("=" * 70)
-    print("🎲 测试性格生成策略")
+    print("🎲 测试大五人格生成策略")
     print("=" * 70)
     
     generator = PersonalityGenerator(seed=42)  # 使用固定种子便于对比
@@ -31,18 +31,12 @@ def test_strategies():
         
         config = generator.generate_random(strategy)
         
-        print(f"\n沟通风格:")
-        print(f"  啰嗦程度: {config.communication['verbose']:2d}/100")
-        print(f"  技术用词: {config.communication['technical']:2d}/100")
-        
-        print(f"\n回答特征:")
-        print(f"  自信度:   {config.response['confidence']:2d}/100")
-        print(f"  细节程度: {config.response['detail_orientation']:2d}/100")
-        print(f"  叙事能力: {config.response['storytelling']:2d}/100")
-        
-        print(f"\n情绪表现:")
-        print(f"  紧张度:   {config.emotion['nervousness']:2d}/100")
-        print(f"  热情度:   {config.emotion['enthusiasm']:2d}/100")
+        print(f"\n大五人格特质:")
+        print(f"  开放性 (Openness):           {config.openness:.3f}")
+        print(f"  尽责性 (Conscientiousness):  {config.conscientiousness:.3f}")
+        print(f"  外向性 (Extraversion):        {config.extraversion:.3f}")
+        print(f"  宜人性 (Agreeableness):       {config.agreeableness:.3f}")
+        print(f"  神经质 (Neuroticism):         {config.neuroticism:.3f}")
 
 
 def test_archetypes():
@@ -55,11 +49,11 @@ def test_archetypes():
     
     archetypes = [
         ("confident", "自信型"),
-        ("nervous", "紧张型"),
-        ("technical", "技术型"),
-        ("storyteller", "叙事型"),
-        ("enthusiastic", "热情型"),
-        ("reserved", "保守型")
+        ("anxious", "焦虑型"),
+        ("creative", "创造型"),
+        ("reliable", "可靠型"),
+        ("friendly", "友善型"),
+        ("analytical", "分析型")
     ]
     
     for archetype, desc in archetypes:
@@ -69,13 +63,12 @@ def test_archetypes():
         
         config = generator.generate_archetype(archetype)
         
-        print(f"\n沟通: verbose={config.communication['verbose']:2d}, "
-              f"technical={config.communication['technical']:2d}")
-        print(f"回答: confidence={config.response['confidence']:2d}, "
-              f"detail={config.response['detail_orientation']:2d}, "
-              f"storytelling={config.response['storytelling']:2d}")
-        print(f"情绪: nervousness={config.emotion['nervousness']:2d}, "
-              f"enthusiasm={config.emotion['enthusiasm']:2d}")
+        print(f"\n大五人格特质:")
+        print(f"  开放性 (O): {config.openness:.3f}")
+        print(f"  尽责性 (C): {config.conscientiousness:.3f}")
+        print(f"  外向性 (E): {config.extraversion:.3f}")
+        print(f"  宜人性 (A): {config.agreeableness:.3f}")
+        print(f"  神经质 (N): {config.neuroticism:.3f}")
 
 
 def test_random_candidate():
@@ -99,9 +92,11 @@ def test_random_candidate():
               f"System Design={candidate['profile']['skills']['system_design']}/10")
         
         personality = candidate['profile']['personality']
-        print(f"性格: confidence={personality['response']['confidence']}, "
-              f"nervousness={personality['emotion']['nervousness']}, "
-              f"enthusiasm={personality['emotion']['enthusiasm']}")
+        print(f"人格: O={personality['openness']:.2f}, "
+              f"C={personality['conscientiousness']:.2f}, "
+              f"E={personality['extraversion']:.2f}, "
+              f"A={personality['agreeableness']:.2f}, "
+              f"N={personality['neuroticism']:.2f}")
 
 
 def test_visual_comparison():
@@ -119,16 +114,17 @@ def test_visual_comparison():
     # 计算平均值
     print("\n各策略的平均值对比:")
     print("-" * 70)
-    print(f"{'策略':<12} {'自信度':>8} {'紧张度':>8} {'热情度':>8} {'技术性':>8}")
+    print(f"{'策略':<12} {'开放性':>8} {'尽责性':>8} {'外向性':>8} {'宜人性':>8} {'神经质':>8}")
     print("-" * 70)
     
     for strategy, configs in samples.items():
-        avg_conf = sum(c.response['confidence'] for c in configs) / len(configs)
-        avg_nerv = sum(c.emotion['nervousness'] for c in configs) / len(configs)
-        avg_enth = sum(c.emotion['enthusiasm'] for c in configs) / len(configs)
-        avg_tech = sum(c.communication['technical'] for c in configs) / len(configs)
+        avg_o = sum(c.openness for c in configs) / len(configs)
+        avg_c = sum(c.conscientiousness for c in configs) / len(configs)
+        avg_e = sum(c.extraversion for c in configs) / len(configs)
+        avg_a = sum(c.agreeableness for c in configs) / len(configs)
+        avg_n = sum(c.neuroticism for c in configs) / len(configs)
         
-        print(f"{strategy:<12} {avg_conf:>7.1f}  {avg_nerv:>7.1f}  {avg_enth:>7.1f}  {avg_tech:>7.1f}")
+        print(f"{strategy:<12} {avg_o:>7.3f}  {avg_c:>7.3f}  {avg_e:>7.3f}  {avg_a:>7.3f}  {avg_n:>7.3f}")
     
     print("-" * 70)
 
@@ -136,7 +132,7 @@ def test_visual_comparison():
 if __name__ == "__main__":
     print("\n")
     print("╔" + "═" * 68 + "╗")
-    print("║" + " " * 20 + "性格生成器测试工具" + " " * 28 + "║")
+    print("║" + " " * 18 + "大五人格生成器测试工具" + " " * 26 + "║")
     print("╚" + "═" * 68 + "╝")
     
     # 运行所有测试
