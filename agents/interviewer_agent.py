@@ -15,6 +15,7 @@ from agents.prompts.interviewer_prompts import (
     FOLLOW_UP_PROMPT,
     FINAL_REPORT_PROMPT
 )
+from agents.prompts.resume_prompts import RESUME_BASED_QUESTION_PROMPT
 from core.score_normalizer import ScoreNormalizer
 from domains import DomainLoader
 
@@ -31,7 +32,7 @@ class InterviewQuestion:
 class InterviewerAgent:
     """面试官Agent类"""
     
-    def __init__(self, llm_client, job_config: Dict, company_config: Dict, domain_id: str = "tech"):
+    def __init__(self, llm_client, job_config: Dict, company_config: Dict, domain_id: str = "tech", resume_data: Dict = None):
         """
         初始化面试官Agent
 
@@ -40,12 +41,14 @@ class InterviewerAgent:
             job_config: 职位配置
             company_config: 公司信息配置
             domain_id: 领域ID（tech/marketing/healthcare等），默认为tech
+            resume_data: 候选人简历数据（可选）
         """
         self.llm_client = llm_client
         self.job_config = job_config
         self.company_config = company_config
         self.conversation_history = []
         self.all_evaluations = []  # 存储所有评估结果
+        self.resume_data = resume_data  # 候选人简历
 
         # Phase 1: 初始化评分标准化器
         self.score_normalizer = ScoreNormalizer()
@@ -490,6 +493,73 @@ class InterviewerAgent:
         
         import random
         return random.choice(fallback_questions)
+    
+    def generate_resume_based_questions(self) -> List[InterviewQuestion]:
+        """
+        基于候选人简历生成针对性的面试问题
+        
+        Returns:
+            基于简历的问题列表（2-3个）
+        """
+        if not self.resume_data:
+            logger.warning("⚠️  没有简历数据，无法生成基于简历的问题")
+            return []
+        
+        logger.info("📄 正在基于简历生成针对性问题...")
+        
+        # 构建系统提示词
+        system_prompt = self._build_system_prompt()
+        
+        # 格式化简历内容
+        resume_content = json.dumps(self.resume_data, ensure_ascii=False, indent=2)
+        
+        # 构建问题生成提示词
+        user_message = RESUME_BASED_QUESTION_PROMPT.format(
+            resume_content=resume_content,
+            job_title=self.job_config.get("title", ""),
+            job_description=self.job_config.get("description", ""),
+            job_requirements=json.dumps(self.job_config.get("requirements", {}), ensure_ascii=False, indent=2)
+        )
+        
+        try:
+            # 调用LLM生成基于简历的问题
+            result = self.llm_client.chat_with_json_response(
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_message}
+                ],
+                temperature=0.7
+            )
+            
+            # 解析问题
+            questions = []
+            interest_points = result.get("interest_points", [])
+            question_list = result.get("questions", [])
+            
+            # 记录识别的兴趣点
+            if interest_points:
+                logger.info(f"🎯 识别到 {len(interest_points)} 个兴趣点:")
+                for point in interest_points:
+                    logger.info(f"  - {point.get('point', '')}: {point.get('reason', '')}")
+            
+            # 构建问题对象
+            for q in question_list[:3]:  # 最多3个问题
+                if isinstance(q, dict):
+                    questions.append(InterviewQuestion(
+                        category=q.get("category", "简历相关"),
+                        question=q.get("question", ""),
+                        difficulty=q.get("difficulty", 7),
+                        expected_skills=q.get("expected_skills", [])
+                    ))
+            
+            logger.success(f"✅ 基于简历生成 {len(questions)} 个针对性问题")
+            return questions
+            
+        except Exception as e:
+            logger.error(f"❌ 基于简历生成问题失败: {e}")
+            import traceback
+            traceback.print_exc()
+            return []
     
     def decide_follow_up(self, evaluation: Dict, original_question: str = None, answer: str = None) -> Optional[str]:
         """

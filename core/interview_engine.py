@@ -15,6 +15,7 @@ from core.llm_client import LLMClient
 from agents.candidate_agent import CandidateAgent, CandidateProfile
 from agents.interviewer_agent import InterviewerAgent, InterviewQuestion
 from config import load_job_config, load_company_config
+from core.resume_generator import ResumeGenerator
 
 
 @dataclass
@@ -100,18 +101,9 @@ class InterviewEngine:
                     from config import generate_domain_config
                     company_config, _ = generate_domain_config(domain_id)
         
-        # 2. 初始化Agents
-        logger.info("🤖 步骤2: 初始化面试官和候选人Agent...")
+        # 2. 解析候选人配置
+        logger.info("🤖 步骤2: 解析候选人配置...")
         
-        # 创建面试官Agent
-        interviewer = InterviewerAgent(
-            llm_client=self.llm_client,
-            job_config=job_config,
-            company_config=company_config,
-            domain_id=domain_id
-        )
-        
-        # 解析候选人配置
         profile_data = candidate_config.get("profile", candidate_config)
         candidate_profile = CandidateProfile(
             name=profile_data.get("name", "未知"),
@@ -119,6 +111,30 @@ class InterviewEngine:
             experience=profile_data.get("experience", {}),
             personality=profile_data.get("personality", {}),
             knowledge_blind_spots=profile_data.get("knowledge_blind_spots", None)
+        )
+        
+        # 3. 生成候选人简历
+        logger.info("📄 步骤3: 生成候选人简历...")
+        resume_generator = ResumeGenerator(llm_client=self.llm_client)
+        resume_data = resume_generator.generate_resume(
+            candidate_profile=candidate_profile,
+            save_to_file=True
+        )
+        
+        # 显示简历
+        resume_display = ResumeGenerator.format_resume_for_display(resume_data)
+        print("\n" + resume_display)
+        
+        # 4. 初始化Agents
+        logger.info("🤖 步骤4: 初始化面试官和候选人Agent...")
+        
+        # 创建面试官Agent（传入简历数据）
+        interviewer = InterviewerAgent(
+            llm_client=self.llm_client,
+            job_config=job_config,
+            company_config=company_config,
+            domain_id=domain_id,
+            resume_data=resume_data
         )
         
         # 创建候选人Agent
@@ -129,18 +145,18 @@ class InterviewEngine:
         
         logger.success(f"✅ 面试官和候选人 {candidate_profile.name} 就位")
         
-        # 3. 开场白
-        logger.info("\n👋 步骤3: 面试开场...")
+        # 5. 开场白
+        logger.info("\n👋 步骤5: 面试开场...")
         print("\n" + "="*60)
         print(f"🏛️  {company_config.get('name', '')}") 
         print(f"💼 {job_config.get('title', '')} 职位面试")
         print(f"👤 候选人: {candidate_profile.name}")
         print("="*60)
         
-        greeting = f"你好，欢迎来到{company_config.get('name', '')}面试{job_config.get('title', '')}职位。请先简单介绍一下你自己。"
+        greeting = f"你好，欢迎来到{company_config.get('name', '')}面试{job_config.get('title', '')}职位。我看了你的简历，请先简单介绍一下你自己。"
         print(f"\n👔 面试官: {greeting}")
         
-        # 4. 自我介绍
+        # 6. 自我介绍
         introduction = candidate.introduce_self()
         print(f"\n👤 {candidate_profile.name}: {introduction}")
         
@@ -149,10 +165,19 @@ class InterviewEngine:
             {"role": "candidate", "content": introduction}
         ]
         
-        # 5. 生成面试问题
-        logger.info("\n❓ 步骤4: 生成面试问题...")
+        # 7. 生成面试问题（包含基于简历的问题）
+        logger.info("\n❓ 步骤6: 生成面试问题...")
         candidate_level = profile_data.get("experience", {}).get("level", "senior")
+        
+        # 生成常规问题
         questions = interviewer.generate_interview_script(candidate_level)
+        
+        # 生成基于简历的针对性问题
+        resume_questions = interviewer.generate_resume_based_questions()
+        
+        # 将基于简历的问题插入到问题列表前面（前2-3个）
+        if resume_questions:
+            questions = resume_questions + questions
         
         # 根据模式选择问题数量
         if mode == "demo":
@@ -161,8 +186,8 @@ class InterviewEngine:
         else:
             logger.info(f"🎯 Full模式: 将进行 {len(questions)} 个问题")
         
-        # 6. 问答循环
-        logger.info("\n💬 步骤5: 开始问答环节...\n")
+        # 8. 问答循环
+        logger.info("\n💬 步骤7: 开始问答环节...\n")
         
         for i, question in enumerate(questions, 1):
             print(f"\n{'='*60}")
@@ -325,8 +350,8 @@ class InterviewEngine:
                 evaluation["followup_score"] = int(followup_normalized_score / 10)
                 evaluation["followup_flag"] = flag
         
-        # 7. 候选人提问
-        logger.info("\n❔ 步骤6: 候选人提问环节...")
+        # 9. 候选人提问
+        logger.info("\n❔ 步骤8: 候选人提问环节...")
         print(f"\n{'='*60}")
         print("🤝 候选人提问环节")
         print(f"{'='*60}")
@@ -346,14 +371,14 @@ class InterviewEngine:
             "content": candidate_questions
         })
         
-        # 8. 生成最终报告
-        logger.info("\n📊 步骤7: 生成评估报告...")
+        # 10. 生成最终报告
+        logger.info("\n📊 步骤9: 生成评估报告...")
         final_report = interviewer.generate_final_report(candidate_profile.name)
         
         end_time = datetime.now()
         duration = (end_time - start_time).total_seconds()
         
-        # 9. 构建结果
+        # 11. 构建结果
         result = InterviewResult(
             interview_id=interview_id,
             candidate_name=candidate_profile.name,
@@ -366,8 +391,8 @@ class InterviewEngine:
             summary=final_report.get("summary", "")
         )
         
-        # 10. 保存记录
-        self._save_interview_record(result)
+        # 12. 保存记录（包含简历数据）
+        self._save_interview_record(result, resume_data=resume_data)
         
         # 输出结果
         print("\n" + "="*60)
@@ -380,8 +405,14 @@ class InterviewEngine:
         return result
     
     
-    def _save_interview_record(self, result: InterviewResult):
-        """保存面试记录到数据库"""
+    def _save_interview_record(self, result: InterviewResult, resume_data: Dict = None):
+        """
+        保存面试记录到数据库
+        
+        Args:
+            result: 面试结果
+            resume_data: 候选人简历数据（可选）
+        """
         # Phase 1: 保存为JSON文件
         data_dir = Path("data/interviews")
         data_dir.mkdir(parents=True, exist_ok=True)
@@ -399,6 +430,7 @@ class InterviewEngine:
             "start_time": result.start_time.isoformat(),
             "end_time": result.end_time.isoformat(),
             "duration_seconds": (result.end_time - result.start_time).total_seconds(),
+            "resume": resume_data,  # 新增：保存简历数据
             "conversation_log": result.conversation_log,
             "evaluation": result.evaluation,
             "recommendation_score": result.recommendation_score,
