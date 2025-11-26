@@ -12,7 +12,7 @@ from domains import DomainLoader
 class RandomCandidateGenerator:
     """随机候选人生成器"""
     
-    # 姓氏和名字库
+    # 中文姓名库（保留，因为姓名不需要LLM生成）
     SURNAMES = ["王", "李", "张", "刘", "陈", "杨", "黄", "赵", "吴", "周", "徐", "孙", "马", "朱", "胡", "林"]
     GIVEN_NAMES = ["明", "华", "强", "伟", "芳", "娜", "静", "丽", "军", "杰", "涛", "鹏", "磊", "洋", "勇", "峰"]
     
@@ -304,43 +304,10 @@ class RandomCandidateGenerator:
 
 class RandomCompanyGenerator:
     """
-    随机公司和职位生成器
+    随机公司和职位生成器（使用LLM动态生成）
     
-    注意：此类主要用于测试，生产环境请使用 config.generate_domain_config()
     支持多领域配置（tech/marketing/healthcare）
     """
-    
-    # 各领域的公司类型
-    COMPANY_TYPES_BY_DOMAIN = {
-        "tech": [
-            "互联网创业公司", "传统软件企业", "金融科技公司", 
-            "电商平台", "游戏公司", "人工智能企业"
-        ],
-        "marketing": [
-            "广告代理公司", "品牌咨询公司", "数字营销公司",
-            "公关公司", "媒体公司", "内容创作公司"
-        ],
-        "healthcare": [
-            "综合医院", "专科医院", "社区卫生中心",
-            "康复中心", "健康管理公司", "养老服务机构"
-        ]
-    }
-    
-    # 各领域的职位名称
-    JOB_TITLES_BY_DOMAIN = {
-        "tech": [
-            "高级后端工程师", "全栈工程师", "系统架构师",
-            "技术负责人", "后端开发工程师", "平台开发工程师"
-        ],
-        "marketing": [
-            "营销经理", "品牌专员", "内容运营",
-            "数字营销专家", "社交媒体经理", "市场策划"
-        ],
-        "healthcare": [
-            "注册护士", "护理主管", "健康管理师",
-            "康复治疗师", "临床护理专家", "护理协调员"
-        ]
-    }
     
     def __init__(self, seed: Optional[int] = None, domain_id: str = "tech"):
         """
@@ -353,103 +320,135 @@ class RandomCompanyGenerator:
         if seed:
             random.seed(seed)
         self.domain_id = domain_id
-        self.company_types = self.COMPANY_TYPES_BY_DOMAIN.get(domain_id, self.COMPANY_TYPES_BY_DOMAIN["tech"])
-        self.job_titles = self.JOB_TITLES_BY_DOMAIN.get(domain_id, self.JOB_TITLES_BY_DOMAIN["tech"])
+        
+        # 加载领域配置
+        self.domain = DomainLoader(domain_id)
+        domain_config = self.domain.get_domain_config()
+        self.domain_name = domain_config.get("domain_name", domain_id)
+        self.description = domain_config.get("description", "")
     
     def generate_company(self) -> Dict[str, Any]:
-        """生成随机公司配置（基于领域）"""
-        company_type = random.choice(self.company_types)
+        """使用LLM生成随机公司配置"""
+        from core.llm_client import LLMClient
         
-        # 各领域的公司名称池
-        company_names_by_domain = {
-            "tech": {
-                "互联网创业公司": ["极客科技", "创新网络", "未来互联"],
-                "传统软件企业": ["中软国际", "东软集团", "用友网络"],
-                "金融科技公司": ["蚂蚁金服", "京东数科", "平安科技"],
-                "电商平台": ["阿里巴巴", "京东", "拼多多"],
-                "游戏公司": ["腾讯游戏", "网易游戏", "米哈游"],
-                "人工智能企业": ["商汤科技", "旷视科技", "依图科技"]
-            },
-            "marketing": {
-                "广告代理公司": ["盛世广告", "博雅公关", "智威汤逊"],
-                "品牌咨询公司": ["品牌方略", "华与华", "特劳特"],
-                "数字营销公司": ["数字一百", "易传媒", "蓝色光标"],
-                "公关公司": ["万博宣伟", "爱德曼", "奥美"],
-                "媒体公司": ["分众传媒", "新潮传媒", "凤凰传媒"],
-                "内容创作公司": ["二更", "一条", "十点读书"]
-            },
-            "healthcare": {
-                "综合医院": ["市第一人民医院", "中心医院", "协和医院"],
-                "专科医院": ["肿瘤医院", "儿童医院", "妇产医院"],
-                "社区卫生中心": ["社区医疗中心", "街道卫生服务中心", "基层卫生院"],
-                "康复中心": ["康复医疗中心", "疗养康复院", "护理康复中心"],
-                "健康管理公司": ["美年大健康", "爱康国宾", "慈铭体检"],
-                "养老服务机构": ["太阳城养老", "亲和源", "泰康之家"]
+        llm = LLMClient()
+        
+        prompt = f"""请为{self.domain_name}领域生成一个虚构的公司信息。
+
+要求：
+1. 公司名称要符合{self.domain_name}领域特点，听起来真实可信
+2. 公司类型要符合该领域的常见分类
+3. 简短描述公司的业务范围
+4. 企业文化要符合该领域特点
+
+请以JSON格式返回，包含以下字段：
+{{
+  "name": "公司名称",
+  "type": "公司类型",
+  "description": "公司简介（一句话）",
+  "culture": "企业文化（一句话）"
+}}
+
+只返回JSON，不要其他内容。"""
+
+        try:
+            response = llm.chat_completion(
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.9,  # 提高创造性
+                max_tokens=300
+            )
+            
+            # 解析JSON
+            import json
+            import re
+            
+            content = response.strip()
+            # 提取JSON部分
+            json_match = re.search(r'\{[\s\S]*\}', content)
+            if json_match:
+                company_data = json.loads(json_match.group())
+                logger.info(f"✅ LLM生成公司: {company_data.get('name', '')}")
+                return company_data
+            else:
+                raise ValueError("未找到有效的JSON")
+                
+        except Exception as e:
+            logger.warning(f"⚠️  LLM生成失败，使用默认值: {e}")
+            # 降级方案：使用简单的默认值
+            industries = self.domain.get_domain_config().get("applicable_industries", ["公司"])
+            company_type = random.choice(industries)
+            return {
+                "name": f"{company_type}示例公司",
+                "type": company_type,
+                "description": f"一家专注于{self.domain_name}领域的企业",
+                "culture": "追求卓越，以人为本"
             }
-        }
-        
-        domain_names = company_names_by_domain.get(self.domain_id, company_names_by_domain["tech"])
-        name = random.choice(domain_names.get(company_type, [f"{company_type}示例"]))
-        
-        # 各领域的企业文化
-        culture_by_domain = {
-            "tech": [
-                "扁平化管理，鼓励创新",
-                "注重技术深度，追求卓越",
-                "快速迭代，拥抱变化"
-            ],
-            "marketing": [
-                "创意驱动，追求卓越",
-                "以客户为中心，结果导向",
-                "开放协作，快速响应"
-            ],
-            "healthcare": [
-                "以患者为中心，关爱生命",
-                "专业严谨，持续学习",
-                "团队协作，守护健康"
-            ]
-        }
-        
-        return {
-            "name": name,
-            "type": company_type,
-            "description": f"一家专注于{company_type}领域的企业",
-            "culture": random.choice(culture_by_domain.get(self.domain_id, culture_by_domain["tech"]))
-        }
     
     def generate_job(self, required_skills: List[str] = None) -> Dict[str, Any]:
-        """生成随机职位配置（基于领域）"""
-        title = random.choice(self.job_titles)
+        """使用LLM生成随机职位配置"""
+        from core.llm_client import LLMClient
         
         # 如果没有指定技能，从domain加载
         if required_skills is None:
-            from domains import DomainLoader
-            domain_loader = DomainLoader(self.domain_id)
-            all_skills = domain_loader.get_all_skills()
+            all_skills = self.domain.get_all_skills()
             required_skills = random.sample(all_skills, min(random.randint(5, 8), len(all_skills)))
         
-        # 各领域的职责描述
-        responsibilities_by_domain = {
-            "tech": [
-                "参与系统架构设计和优化",
-                "编写高质量、可维护的代码",
-                "解决复杂技术问题"
-            ],
-            "marketing": [
-                "制定和执行营销策略",
-                "管理品牌推广和市场活动",
-                "分析市场数据并优化营销效果"
-            ],
-            "healthcare": [
-                "提供专业的护理和健康服务",
-                "执行医疗护理计划和健康评估",
-                "确保患者安全和服务质量"
-            ]
-        }
+        llm = LLMClient()
         
-        return {
-            "title": title,
-            "required_skills": required_skills,
-            "description": f"负责{title}相关工作",
-            "responsibilities": responsibilities_by_domain.get(self.domain_id, responsibilities_by_domain["tech"])
-        }
+        # 获取典型角色作为参考
+        typical_roles = self.domain.get_typical_roles()
+        roles_hint = "、".join(typical_roles[:3]) if typical_roles else "相关职位"
+        
+        prompt = f"""请为{self.domain_name}领域生成一个职位信息。
+
+参考职位类型：{roles_hint}
+要求的技能：{', '.join(required_skills[:5])}
+
+请生成：
+1. 职位名称（符合该领域特点）
+2. 职位简介（一句话）
+3. 3-4条主要职责
+
+请以JSON格式返回：
+{{
+  "title": "职位名称",
+  "description": "职位简介",
+  "responsibilities": ["职责1", "职责2", "职责3"]
+}}
+
+只返回JSON，不要其他内容。"""
+
+        try:
+            response = llm.chat_completion(
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.8,
+                max_tokens=400
+            )
+            
+            import json
+            import re
+            
+            content = response.strip()
+            json_match = re.search(r'\{[\s\S]*\}', content)
+            if json_match:
+                job_data = json.loads(json_match.group())
+                job_data["required_skills"] = required_skills
+                logger.info(f"✅ LLM生成职位: {job_data.get('title', '')}")
+                return job_data
+            else:
+                raise ValueError("未找到有效的JSON")
+                
+        except Exception as e:
+            logger.warning(f"⚠️  LLM生成失败，使用默认值: {e}")
+            # 降级方案
+            title = random.choice(typical_roles) if typical_roles else f"{self.domain_name}专员"
+            return {
+                "title": title,
+                "required_skills": required_skills,
+                "description": f"负责{title}相关工作",
+                "responsibilities": [
+                    f"完成{self.domain_name}相关的核心工作",
+                    "与团队协作，达成业务目标",
+                    "持续学习和提升专业能力"
+                ]
+            }

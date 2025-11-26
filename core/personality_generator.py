@@ -325,9 +325,12 @@ def create_random_candidate_config(
     if name:
         base_config['profile']['name'] = name
     else:
-        surnames = ["王", "李", "张", "刘", "陈", "杨", "黄", "赵", "吴", "周"]
-        given_names = ["明", "华", "强", "伟", "芳", "娜", "静", "丽", "军", "杰"]
-        base_config['profile']['name'] = random.choice(surnames) + random.choice(given_names)
+        # 使用RandomCandidateGenerator的姓名库
+        from core.random_generator import RandomCandidateGenerator
+        base_config['profile']['name'] = (
+            random.choice(RandomCandidateGenerator.SURNAMES) + 
+            random.choice(RandomCandidateGenerator.GIVEN_NAMES)
+        )
     
     logger.info(f"✅ 创建随机候选人: {base_config['profile']['name']}")
     
