@@ -153,7 +153,7 @@ HRM1/
 │
 ├── frontend（暂时不用）/               # 🎨 前端界面（未启用）
 │
-├── main_v2.py                         # 🚀 主程序入口（v2.0版本）
+├── main_v3.py                         # 🚀 主程序入口（v3.0版本）
 ├── requirements.txt                   # 📦 Python依赖
 ├── .env                               # 🔐 环境变量配置
 ├── .gitignore                         # Git忽略规则
@@ -214,117 +214,83 @@ QWEN_MODEL=qwen3-max
 #### 📋 快速参考
 
 | 命令 | 说明 | 执行时间 | 适合场景 |
-|------|------|---------|---------|
-| `python main_v2.py` | Demo模式（默认） | ~3分钟 | 快速体验 |
-| `python main_v2.py --mode full` | 完整面试 | ~5-10分钟 | 深度测试 |
-| `python main_v2.py --mode random` | 随机性格 | ~3-5分钟 | 性格研究 |
-| `python main_v2.py --mode domain` | 跨领域演示 | ~3-5分钟 | 跨行业展示 |
-| `python main_v2.py --help` | 查看帮助 | 即时 | 查看文档 |
+|------|------|---------|---------|| `python main_v3.py` | 交互式启动 | ~3-10分钟 | 所有场景 |
 
 #### 📋 命令行使用（推荐）
 
-**查看帮助**：
+**启动面试系统**：
 ```bash
-python main_v2.py --help
+python main_v3.py
 ```
 
-**四种运行模式**：
+**v3.0 完全交互式界面**：
 
-```bash
-# 1. Demo模式 - 快速演示（默认）
-python main_v2.py --mode demo
-# 特点：使用Tech领域，理想候选人，只问3个问题，快速体验系统
+系统启动后将引导您完成以下选择：
 
-# 2. 完整模式 - 支持知识盲区测试
-python main_v2.py --mode full
-# 特点：可选择6种候选人模板，完整面试流程，详细评估报告
+1️⃣ **选择面试模式**
+   - Demo模式：快速演示（3个问题）
+   - Full模式：完整面试流程
 
-# 3. 随机性格模式 - 性格生成器
-python main_v2.py --mode random
-# 特点：每次生成不同性格特质，4种策略+6种原型可选
+2️⃣ **选择面试领域**
+   - tech：技术/互联网（39个技能）
+   - marketing：营销/传媒（34个技能）
+   - healthcare：医疗/护理（35个技能）
 
-# 4. 跨领域演示 - 领域通用化 🆕
-python main_v2.py --mode domain
-# 特点：支持Tech/Marketing/Healthcare三大领域选择
-```
+3️⃣ **选择候选人来源**
+   - 使用预定义模板（6种模板可选）
+   - 随机生成候选人（性格/技能随机）
 
-#### 🎯 各模式详细说明
+所有选项均可在运行时交互式选择，无需命令行参数！
 
-**模式1: Demo模式**
-- 用途：快速体验系统功能
-- 配置：Tech领域 + 理想候选人模板
-- 问题数：3个
-- 执行时间：~3分钟
-- 适合场景：首次使用、功能演示
+#### 🎯 功能特性说明
 
-**模式2: 完整模式**
-- 用途：完整面试流程，测试知识盲区和追问机制
-- 候选人模板：
-  - `ideal_candidate` - 理想候选人
-  - `junior_candidate` - 初级候选人
-  - `nervous_candidate` - 紧张型候选人
-  - `overconfident_candidate` - 过度自信（不懂装懂）
-  - `underconfident_candidate` - 过度谦虚（低估能力）
-  - `test_react_blind_spot` - React知识盲区测试 ⭐推荐
-- 问题数：6-10个（含智能追问）
-- 执行时间：~5-10分钟
-- 适合场景：深度测试、追问机制验证
+**面试模式**
+- **Demo模式**：3个问题，快速体验（~3分钟）
+- **Full模式**：6-10个问题，含智能追问（~5-10分钟）
 
-**模式3: 随机性格模式**
-- 用途：生成不同性格特质的候选人
-- 策略选择：
-  - `normal` - 正态分布（推荐，更真实）
-  - `balanced` - 平衡型（中等值）
-  - `extreme` - 极端型（有趣的边界情况）
-  - `uniform` - 完全随机
-- 原型选择：
-  - `confident` - 自信型
-  - `nervous` - 紧张型
-  - `technical` - 技术型
-  - `storyteller` - 叙事型
-  - `enthusiastic` - 热情型
-  - `reserved` - 保守型
-- 适合场景：性格研究、多样性测试
+**候选人模板**（预定义）
+- `ideal_candidate` - 理想候选人
+- `junior_candidate` - 初级候选人
+- `nervous_candidate` - 紧张型候选人
+- `overconfident_candidate` - 过度自信（不懂装懂）
+- `underconfident_candidate` - 过度谦虚（低估能力）
+- `test_react_blind_spot` - React知识盲区测试 ⭐推荐
 
-**模式4: 跨领域演示** 🆕
-- 用途：展示系统跨行业通用化能力
-- 领域选择：
-  - `tech` - 技术/互联网（39个技能）
-  - `marketing` - 营销/传媒（34个技能）
-  - `healthcare` - 医疗/护理（35个技能）
-- 自动功能：
-  - 显示领域信息（名称、描述、适用行业）
-  - 为非tech领域自动生成随机候选人
-  - 使用领域专属的信号词汇检测
-  - 展示领域特定的技能评估
-- 适合场景：跨行业应用展示、领域配置验证
+**随机生成选项**
+- **性格策略**：normal（正态分布）、balanced（平衡型）、extreme（极端型）、uniform（完全随机）
+- **性格原型**：confident、nervous、technical、storyteller、enthusiastic、reserved
+
+**支持领域**
+- **tech**：技术/互联网（39个技能）
+- **marketing**：营销/传媒（34个技能）
+- **healthcare**：医疗/护理（35个技能）
 
 #### 💡 使用示例
 
-**示例1: 快速体验**
+**示例1: 快速体验（Tech领域 + Demo模式）**
 ```bash
-# 最简单的使用方式
-python main_v2.py
+python main_v3.py
+# 选择: 1-Demo模式 → 1-tech → 1-模板 → 1-ideal_candidate
 ```
 
 **示例2: 测试知识盲区和追问**
 ```bash
-python main_v2.py --mode full
-# 在提示时选择: 6 (test_react_blind_spot)
+python main_v3.py
+# 选择: 2-Full模式 → 1-tech → 1-模板 → 6-test_react_blind_spot
 # 系统会检测候选人在React上的"不懂装懂"并智能追问
 ```
 
 **示例3: 体验营销领域面试**
 ```bash
-python main_v2.py --mode domain
-# 在提示时选择: 2 (marketing)
+python main_v3.py
+# 选择: 1-Demo模式 → 2-marketing → 2-随机生成 → 1-normal策略
 # 系统会生成营销领域候选人并进行营销技能评估
 ```
 
 **示例4: 生成极端性格候选人**
 ```bash
-python main_v2.py --mode random
-# 选择策略: 3 (extreme)
+python main_v3.py
+# 选择: 2-Full模式 → 1-tech → 2-随机生成 → 3-extreme策略
 # 生成具有极端性格特质的候选人进行面试
 ```
 
@@ -591,5 +557,5 @@ python test/test_personality_generator.py   # 性格生成器测试
 ---
 
 **创建日期**：2024年11月  
-**最后更新**：2025年11月26日  
-**版本**：v2.0 (领域通用化版本)
+**最后更新**：2024年11月26日  
+**版本**：v3.0 (统一交互式架构)
