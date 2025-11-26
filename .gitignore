@@ -67,3 +67,5 @@ htmlcov/
 # .windsurf/rules
 
 test/data/*
+
+.windsurf/*
