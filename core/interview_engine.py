@@ -16,6 +16,7 @@ from agents.candidate_agent import CandidateAgent, CandidateProfile
 from agents.interviewer_agent import InterviewerAgent, InterviewQuestion
 from config import load_job_config, load_company_config
 from core.resume_generator import ResumeGenerator
+from core.candidate_analyzer import CandidateAnalyzer
 
 
 @dataclass
@@ -43,6 +44,7 @@ class InterviewEngine:
             llm_client: LLM客户端实例，如果为None则自动创建
         """
         self.llm_client = llm_client or self._create_llm_client()
+        self.analyzer = CandidateAnalyzer(noise_level=0.05)  # 初始化候选人分析器（模拟器）
         
     def _create_llm_client(self):
         """创建LLM客户端"""
@@ -219,6 +221,35 @@ class InterviewEngine:
                 "content": answer
             })
             
+            # === 候选人回答分析（模拟AI模型） ===
+            # 将 CandidateProfile 转为字典
+            profile_dict = {
+                "name": candidate_profile.name,
+                "skills": candidate_profile.skills,
+                "experience": candidate_profile.experience,
+                "personality": candidate_profile.personality,
+                "knowledge_blind_spots": candidate_profile.knowledge_blind_spots
+            }
+            
+            analysis_result = self.analyzer.analyze_answer(
+                answer=answer,
+                question=question_text,
+                target_skills=question.expected_skills,
+                candidate_profile=profile_dict
+            )
+            
+            # 格式化并显示分析结果
+            analysis_display = CandidateAnalyzer.format_analysis_result(analysis_result)
+            print(f"\n{analysis_display}")
+            
+            # 将分析结果添加到对话日志
+            conversation_log.append({
+                "role": "system",
+                "type": "candidate_analysis",
+                "content": analysis_result,
+                "display": analysis_display
+            })
+            
             # 评估回答
             evaluation = interviewer.evaluate_answer(
                 question=question_text,
@@ -302,6 +333,27 @@ class InterviewEngine:
                     "role": "candidate",
                     "content": followup_answer,
                     "type": "followup_answer"
+                })
+                
+                # === 追问后的分析 ===
+                followup_analysis_result = self.analyzer.analyze_answer(
+                    answer=followup_answer,
+                    question=followup_question,
+                    target_skills=question.expected_skills,
+                    candidate_profile=profile_dict  # 使用同一个档案字典
+                )
+                
+                # 显示追问后的分析结果
+                followup_analysis_display = CandidateAnalyzer.format_analysis_result(followup_analysis_result)
+                print(f"\n{followup_analysis_display}")
+                
+                # 添加到对话日志
+                conversation_log.append({
+                    "role": "system",
+                    "type": "candidate_analysis",
+                    "content": followup_analysis_result,
+                    "display": followup_analysis_display,
+                    "is_followup": True
                 })
                 
                 # 重新评估追问后的回答
