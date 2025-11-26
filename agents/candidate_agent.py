@@ -299,6 +299,7 @@ class CandidateAgent:
         
         # 构建完整提示词
         system_prompt = CANDIDATE_SYSTEM_PROMPT.format(
+            candidate_name=self.profile.name,  # 传递候选人真实姓名
             skill_profile=skill_profile,
             work_experience=work_experience,
             personality_traits=personality_traits,
