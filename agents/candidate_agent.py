@@ -122,37 +122,33 @@ class CandidateAgent:
                 user_message += f"**你的{skill}技能: actual_level={level}/10**\n\n"
                 
                 if level <= 3:
-                    user_message += "**❌ 错误示例1（绝对不能这样回答）:**\n"
-                    user_message += '"我理解依赖数组的原理是React会用Object.is进行浅比较，所以如果传对象会导致引用不同，需要用useCallback来稳定引用..."\n'
-                    user_message += "→ 错误！重复了面试官的专业术语：'依赖数组'、'Object.is'、'useCallback'！\n\n"
-                    
-                    user_message += "**❌ 错误示例2（也不能这样回答）:**\n"
-                    user_message += '"cleanup函数的话，我记得是在组件卸载时调用的..."\n'
-                    user_message += '"清理函数的话，好像是在组件卸载的时候执行..."\n'
-                    user_message += "→ 错误！'cleanup函数'、'清理函数'都是专业术语！应该用'那个...返回的函数'等模糊说法！\n\n"
+                    user_message += "**❌ 错误示例（绝对不能这样回答）:**\n"
+                    user_message += '"我理解【专业概念A】的原理是通过【机制B】来实现的，其中涉及【要素C】和【要素D】的配合..."\n'
+                    user_message += "→ 错误！说出了具体的专业术语、原理解释、技术细节！\n"
+                    user_message += "→ actual_level=3时，你不可能知道这些深层的专业知识！\n\n"
                     
                     user_message += "**✅ 正确示例（你应该这样回答）:**\n"
-                    user_message += '"呃...您问的这几个问题，说实话我都不太清楚具体原理。我们项目里就是照着文档或者别人的代码写的，为什么要那样传参数、什么时候会执行，这些底层的东西我真没研究过。"\n'
-                    user_message += "→ 正确！完全避免了专业术语，用'这个'、'那样'等模糊词汇，诚实承认不懂。\n\n"
+                    user_message += '"呃...您问的这些，说实话我不太清楚。我只是大概知道有这么个东西，但具体是怎么回事、为什么要那样做，这些我真没深入了解过。"\n'
+                    user_message += "→ 正确！完全避免专业术语，用'这个'、'那样'等模糊词汇，诚实承认了解不深。\n\n"
                     
-                    user_message += "**你的词汇限制:**\n"
-                    user_message += "- ✅ 可以说: '不太清楚'、'记不住了'、'没研究过'、'听说过但不会用'\n"
-                    user_message += "- ❌ 禁止说: 任何API名称、配置参数、技术术语、工作原理\n\n"
+                    user_message += "**你的表达边界:**\n"
+                    user_message += "- ✅ 可以说: '不太清楚'、'记不住了'、'了解不深'、'接触不多'、'没深入研究过'\n"
+                    user_message += "- ❌ 禁止说: 任何专业术语、具体名称、原理解释、技术/方法细节\n\n"
                     
                 elif level <= 5:
                     user_message += "**❌ 错误示例（绝对不能这样回答）:**\n"
-                    user_message += '"RabbitMQ消息不丢失需要配置publisher confirm、durable队列、persistent消息，还要处理mandatory参数和消费端的手动ACK..."\n'
-                    user_message += "→ 这是错误的！你actual_level=5，不可能知道这么多具体配置参数！\n\n"
+                    user_message += '"要解决【问题X】需要用到【方法A】、【方法B】和【方法C】，其中【方法A】要注意【细节1】和【细节2】..."\n'
+                    user_message += "→ 错误！你actual_level=5，不可能说出这么多具体的方法名称和操作细节！\n\n"
                     
                     user_message += "**✅ 正确示例（你应该这样回答）:**\n"
-                    user_message += '"嗯...我们项目里确实配置了一些保证消息可靠性的东西，好像是要配置队列的某些参数？具体叫什么参数我记不清了，当时是跟着同事配的，这块我了解得不够深入。"\n'
-                    user_message += "→ 这才符合你的真实水平！知道概念但说不出具体参数名。\n\n"
+                    user_message += '"嗯...我知道大概要用一些方法来处理，好像是有几个步骤？但具体叫什么、怎么操作，我记得不是很清楚了，这块我了解得不够深入。"\n'
+                    user_message += "→ 正确！知道大概方向，但说不出具体名称和细节。\n\n"
                     
-                    user_message += "**你的词汇限制:**\n"
-                    user_message += "- ✅ 可以说: '配置了一些参数'、'设置了某些选项'、'好像是...'\n"
-                    user_message += "- ❌ 禁止说: 具体的配置参数名、API名称、高级特性术语\n\n"
+                    user_message += "**你的表达边界:**\n"
+                    user_message += "- ✅ 可以说: '有一些方法'、'好像需要做某些操作'、'大概是...'、'记不太清具体的'\n"
+                    user_message += "- ❌ 禁止说: 具体的方法名称、操作步骤、专业术语、详细流程\n\n"
             
-            user_message += "\n**核心原则: 你的actual_level决定了你的'词汇表'大小**\n"
+            user_message += "\n**核心原则: 你的actual_level决定了你能使用的术语范围**\n"
             user_message += "- 追问不会让你'突然想起'新的专业术语\n"
             user_message += "- 如果你之前没说过某个术语，现在也不能突然说出来\n"
             user_message += "- **即使面试官问题中提到某个术语，如果超出你的能力，也不要重复使用它**\n"
