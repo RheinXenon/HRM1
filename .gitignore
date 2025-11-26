@@ -65,3 +65,5 @@ data/analysis/*
 data/resumes/*
 !data/resumes/.gitkeep
 .windsurf/rules
+
+test/data/*
