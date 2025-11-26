@@ -152,7 +152,7 @@ def generate_candidate(candidate_type: str, domain_id: str, **kwargs) -> Dict:
         # 生成性格
         generator = PersonalityGenerator()
         if archetype:
-            personality_config = generator.generate_from_archetype(archetype)
+            personality_config = generator.generate_archetype(archetype)
         else:
             personality_config = generator.generate_random(strategy=strategy)
         

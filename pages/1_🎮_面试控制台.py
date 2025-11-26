@@ -100,7 +100,7 @@ def generate_candidate_config(candidate_type, template_name, domain_id, strategy
         # 生成随机候选人
         generator = PersonalityGenerator()
         if archetype != "random":
-            personality_config = generator.generate_from_archetype(archetype)
+            personality_config = generator.generate_archetype(archetype)
         else:
             personality_config = generator.generate_random(strategy=strategy)
         

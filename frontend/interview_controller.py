@@ -40,7 +40,7 @@ class InterviewController:
     def start_interview(
         self,
         domain_id: str,
-        candidate_config: Dict,
+        candidate_configs: List[Dict],
         mode: str = "full",
         callback: Optional[Callable] = None
     ):
@@ -49,7 +49,7 @@ class InterviewController:
         
         Args:
             domain_id: 领域ID
-            candidate_config: 候选人配置
+            candidate_configs: 候选人配置列表
             mode: 面试模式 (demo/full)
             callback: 回调函数，用于更新UI
         """
@@ -68,7 +68,7 @@ class InterviewController:
         # 创建面试线程
         self.interview_thread = threading.Thread(
             target=self._run_interview_thread,
-            args=(domain_id, candidate_config, mode, callback),
+            args=(domain_id, candidate_configs, mode, callback),
             daemon=True
         )
         self.interview_thread.start()
