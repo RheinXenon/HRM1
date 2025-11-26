@@ -134,6 +134,22 @@ class InterviewController:
                 if self.stop_flag.is_set():
                     break
                 
+                # 发送批量进度更新
+                self.message_queue.put({
+                    "type": "batch_progress",
+                    "content": {
+                        "current": idx,
+                        "total": total_candidates
+                    }
+                })
+                
+                # 如果是批量模式且不是第一个，清空之前的消息
+                if total_candidates > 1 and idx > 1:
+                    self.message_queue.put({
+                        "type": "clear_messages",
+                        "content": {}
+                    })
+                
                 self.message_queue.put({
                     "type": "system",
                     "content": f"🚀 开始第 {idx}/{total_candidates} 个面试 (领域: {domain_id})"

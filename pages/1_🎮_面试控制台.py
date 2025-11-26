@@ -50,6 +50,14 @@ if 'resume_data' not in st.session_state:
     st.session_state.resume_data = None
 if 'interview_info' not in st.session_state:
     st.session_state.interview_info = None
+if 'job_title' not in st.session_state:
+    st.session_state.job_title = None
+if 'batch_total' not in st.session_state:
+    st.session_state.batch_total = 0
+if 'batch_current' not in st.session_state:
+    st.session_state.batch_current = 0
+if 'all_reports' not in st.session_state:
+    st.session_state.all_reports = []
 
 # 自定义CSS
 st.markdown("""
@@ -257,6 +265,14 @@ def main():
                 st.session_state.candidate_info = None
                 st.session_state.resume_data = None
                 st.session_state.interview_info = None
+                st.session_state.all_reports = []
+                st.session_state.batch_total = batch_size
+                st.session_state.batch_current = 0
+                
+                # 保存岗位信息
+                from config import generate_domain_config
+                company_config, job_config = generate_domain_config(domain_id)
+                st.session_state.job_title = job_config.get('job_title', '未知职位')
                 
                 # 启动面试（传入配置列表）
                 st.session_state.controller.start_interview(
@@ -290,8 +306,15 @@ def main():
         # 状态显示
         st.subheader("📊 状态")
         
-        status_text = "🟢 运行中" if st.session_state.interview_running else "⚪ 空闲"
+        status_text = "� 运行中" if st.session_state.interview_running else "⚪ 空闲"
         st.markdown(f"**面试状态:** {status_text}")
+        
+        # 批量进度
+        if st.session_state.batch_total > 1:
+            st.markdown(f"**批量进度:** {st.session_state.batch_current}/{st.session_state.batch_total}")
+            if st.session_state.batch_current > 0:
+                progress = st.session_state.batch_current / st.session_state.batch_total
+                st.progress(progress)
         
         if st.session_state.controller.is_paused:
             st.warning("⏸️ 已暂停")
@@ -303,10 +326,19 @@ def main():
             st.subheader("👤 候选人信息")
             info = st.session_state.candidate_info
             
+            # 计算技能平均分
+            skills = info.get('skills', {})
+            avg_skill = sum(skills.values()) / len(skills) if skills else 0
+            
+            # 获取岗位名称
+            job_title = st.session_state.job_title or '未知职位'
+            
             st.markdown(f"""
             <div class="candidate-card">
-                <h3>{info.get('name', '未知')}</h3>
-                <p><strong>技能数量:</strong> {len(info.get('skills', {}))}</p>
+                <h3>👤 {info.get('name', '未知')}</h3>
+                <p><strong>💼 应聘职位:</strong> {job_title}</p>
+                <p><strong>📊 技能数量:</strong> {len(skills)} 项</p>
+                <p><strong>⭐ 技能平均:</strong> {avg_skill:.1f}/10</p>
             </div>
             """, unsafe_allow_html=True)
             
@@ -463,9 +495,9 @@ def main():
                 st.markdown("#### 🎯 招聘建议")
                 st.markdown(f"**{report['recommendation']}**")
     
-    # 自动刷新消息
+    # 实时消息更新（优化轮询间隔）
     if st.session_state.interview_running:
-        # 从控制器获取新消息
+        # 批量获取所有待处理消息
         while True:
             msg = st.session_state.controller.get_message()
             if msg is None:
@@ -473,12 +505,23 @@ def main():
             
             msg_type = msg.get('type', '')
             
+            # 处理批量进度更新
+            if msg_type == 'batch_progress':
+                progress_data = msg.get('content', {})
+                st.session_state.batch_current = progress_data.get('current', 0)
+                st.session_state.batch_total = progress_data.get('total', 0)
+            
+            # 处理清空消息
+            elif msg_type == 'clear_messages':
+                st.session_state.messages = []
+                st.session_state.final_report = None
+            
             # 保存消息
-            if msg_type in ['message', 'system', 'evaluation']:
+            elif msg_type in ['message', 'system', 'evaluation']:
                 st.session_state.messages.append(msg)
             
             # 处理特殊消息
-            if msg_type == 'candidate_info':
+            elif msg_type == 'candidate_info':
                 st.session_state.candidate_info = msg.get('content', {})
             elif msg_type == 'resume':
                 st.session_state.resume_data = msg.get('content', {})
@@ -486,13 +529,21 @@ def main():
                 st.session_state.interview_info = msg.get('content', {})
             elif msg_type == 'final_report':
                 st.session_state.final_report = msg.get('content', {})
-                st.session_state.interview_running = False
+                # 批量模式下不立即设置为非运行状态
+                if st.session_state.batch_current >= st.session_state.batch_total:
+                    st.session_state.interview_running = False
+                # 保存报告
+                st.session_state.all_reports.append(msg.get('content', {}))
             elif msg_type == 'error':
                 st.error(msg.get('content', ''))
                 st.session_state.interview_running = False
         
-        # 刷新页面
-        time.sleep(0.5)
+        # 检查面试状态
+        if not st.session_state.controller.is_running:
+            st.session_state.interview_running = False
+        
+        # 面试运行时持续刷新，但间隔从 0.5s 增加到 1s
+        time.sleep(1.0)
         st.rerun()
 
 
