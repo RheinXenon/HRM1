@@ -69,16 +69,16 @@ class InterviewerAgent:
         
         questions = []
         
-        # 从候选人配置中获取技能列表，动态生成问题类别
-        candidate_skills = list(candidate_profile.get("skills", {}).keys())
+        # 从职位要求中获取技能列表，动态生成问题类别
+        required_skills = self.job_config.get("required_skills", [])
         
         # 将技能分为核心技能和软技能
         soft_skills = ["communication", "teamwork", "problem_solving", "learning", "leadership"]
-        core_skills = [s for s in candidate_skills if s not in soft_skills][:6]  # 最多6个核心技能
+        core_skills = [s for s in required_skills if s not in soft_skills][:6]  # 最多6个核心技能
         
         categories = [
             ("职位相关", ["understanding", "motivation"]),
-            ("专业能力", core_skills if core_skills else candidate_skills[:3]),
+            ("专业能力", core_skills if core_skills else required_skills[:3]),
             ("行为面试", ["problem_solving", "teamwork"]),
             ("文化匹配", ["communication", "learning"])
         ]
