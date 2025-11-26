@@ -108,44 +108,56 @@ class CandidateAgent:
             related_skills=", ".join(related_skills) if related_skills else "综合能力"
         )
         
-        # 如果是追问，使用思维链强制自我评估
+        # 如果是追问，添加强化约束提示（使用Few-Shot Negative Examples）
         if is_followup:
+            user_message += "\n\n**⚠️ 这是追问！面试官在测试你的真实知识深度。**\n\n"
+            
             # 获取相关技能的actual_level
             skill_levels = {}
             for skill in related_skills:
                 skill_levels[skill] = self.profile.skills.get(skill, 0)
             
-            # 构建禁用术语列表（基于技能等级）
-            forbidden_terms = self._get_forbidden_terms(related_skills, skill_levels)
-            
-            user_message += "\n\n🚨 **这是追问！必须先进行自我能力评估！** 🚨\n\n"
-            user_message += "**第一步：自我评估（在心里思考，不要说出来）**\n"
-            
+            # 使用Few-Shot Negative Examples - 明确展示"错误"和"正确"的回答
             for skill, level in skill_levels.items():
-                user_message += f"\n关于 {skill} (actual_level={level}/10):\n"
+                user_message += f"**你的{skill}技能: actual_level={level}/10**\n\n"
+                
                 if level <= 3:
-                    user_message += "- 我的真实水平：只听说过，没实际用过\n"
-                    user_message += "- 我知道的词汇：" + ", ".join(["基本概念", "技术名称"]) + "\n"
-                    user_message += "- ❌ 我绝对不知道的：任何API、配置参数、工作原理、内部机制\n"
+                    user_message += "**❌ 错误示例1（绝对不能这样回答）:**\n"
+                    user_message += '"我理解依赖数组的原理是React会用Object.is进行浅比较，所以如果传对象会导致引用不同，需要用useCallback来稳定引用..."\n'
+                    user_message += "→ 错误！重复了面试官的专业术语：'依赖数组'、'Object.is'、'useCallback'！\n\n"
+                    
+                    user_message += "**❌ 错误示例2（也不能这样回答）:**\n"
+                    user_message += '"cleanup函数的话，我记得是在组件卸载时调用的..."\n'
+                    user_message += '"清理函数的话，好像是在组件卸载的时候执行..."\n'
+                    user_message += "→ 错误！'cleanup函数'、'清理函数'都是专业术语！应该用'那个...返回的函数'等模糊说法！\n\n"
+                    
+                    user_message += "**✅ 正确示例（你应该这样回答）:**\n"
+                    user_message += '"呃...您问的这几个问题，说实话我都不太清楚具体原理。我们项目里就是照着文档或者别人的代码写的，为什么要那样传参数、什么时候会执行，这些底层的东西我真没研究过。"\n'
+                    user_message += "→ 正确！完全避免了专业术语，用'这个'、'那样'等模糊词汇，诚实承认不懂。\n\n"
+                    
+                    user_message += "**你的词汇限制:**\n"
+                    user_message += "- ✅ 可以说: '不太清楚'、'记不住了'、'没研究过'、'听说过但不会用'\n"
+                    user_message += "- ❌ 禁止说: 任何API名称、配置参数、技术术语、工作原理\n\n"
+                    
                 elif level <= 5:
-                    user_message += "- 我的真实水平：用过基础功能，但不深入\n"
-                    user_message += "- 我知道的词汇：基本使用方法、常见场景\n"
-                    user_message += "- ❌ 我绝对不知道的：具体配置参数、深层原理、性能优化细节\n"
-                else:
-                    user_message += "- 我的真实水平：熟练使用，了解原理\n"
-                    user_message += "- 我知道的：基本原理和常用配置\n"
+                    user_message += "**❌ 错误示例（绝对不能这样回答）:**\n"
+                    user_message += '"RabbitMQ消息不丢失需要配置publisher confirm、durable队列、persistent消息，还要处理mandatory参数和消费端的手动ACK..."\n'
+                    user_message += "→ 这是错误的！你actual_level=5，不可能知道这么多具体配置参数！\n\n"
+                    
+                    user_message += "**✅ 正确示例（你应该这样回答）:**\n"
+                    user_message += '"嗯...我们项目里确实配置了一些保证消息可靠性的东西，好像是要配置队列的某些参数？具体叫什么参数我记不清了，当时是跟着同事配的，这块我了解得不够深入。"\n'
+                    user_message += "→ 这才符合你的真实水平！知道概念但说不出具体参数名。\n\n"
+                    
+                    user_message += "**你的词汇限制:**\n"
+                    user_message += "- ✅ 可以说: '配置了一些参数'、'设置了某些选项'、'好像是...'\n"
+                    user_message += "- ❌ 禁止说: 具体的配置参数名、API名称、高级特性术语\n\n"
             
-            if forbidden_terms:
-                user_message += "\n⛔ **禁止使用的术语（你不可能知道这些词）：**\n"
-                user_message += "```\n" + ", ".join(forbidden_terms[:20]) + "\n```\n"
-                user_message += "如果你的回答中包含任何这些词，说明你在'圆过去'！\n"
-            
-            user_message += "\n**第二步：基于评估结果回答**\n"
-            user_message += "- 只使用你'知道的词汇'列表中的内容\n"
-            user_message += "- 不要使用'禁止使用的术语'\n"
-            user_message += "- 如果答不上来，直接说'这个我不太清楚'\n"
-            user_message += "- 可以给出错误的理解（符合你的低能力等级）\n"
-            user_message += "\n**记住：追问不会让你'突然想起来'高级知识！**\n"
+            user_message += "\n**核心原则: 你的actual_level决定了你的'词汇表'大小**\n"
+            user_message += "- 追问不会让你'突然想起'新的专业术语\n"
+            user_message += "- 如果你之前没说过某个术语，现在也不能突然说出来\n"
+            user_message += "- **即使面试官问题中提到某个术语，如果超出你的能力，也不要重复使用它**\n"
+            user_message += "- 用'这个'、'那个'、'某些功能'等模糊词汇代替你不懂的专业术语\n"
+            user_message += "- 当答不上来时，直接承认不知道，不要试图'圆'\n\n"
         
         try:
             # 构建完整的对话历史
@@ -169,31 +181,26 @@ class CandidateAgent:
             messages.append({"role": "user", "content": user_message})
             
             # 调用LLM生成回答（使用完整对话历史）
-            response = self.llm_client.chat_completion(
+            answer = self.llm_client.chat_completion(
                 messages=messages,
-                temperature=0.7
+                temperature=0.8
             )
-            
-            answer = response.strip()
-            
-            # 如果是追问，进行后处理过滤
-            if is_followup and related_skills:
-                answer = self._post_process_followup_answer(
-                    answer, 
-                    related_skills,
-                    skill_levels if 'skill_levels' in locals() else {}
-                )
             
             # 记录对话历史
             self.conversation_history.append({
+                "role": "interviewer",
+                "type": "question",
+                "content": question,
+                "context": question_context
+            })
+            self.conversation_history.append({
                 "role": "candidate",
                 "type": "answer",
-                "content": answer,
-                "question": question
+                "content": answer
             })
             
             logger.success(f"✅ 回答生成成功 (上下文: {len(messages)}条消息)")
-            return answer
+            return answer.strip()
             
         except Exception as e:
             logger.error(f"❌ 回答生成失败: {e}")
@@ -244,163 +251,6 @@ class CandidateAgent:
             技能等级，如果不存在则返回0
         """
         return self.profile.skills.get(skill_name, 0)
-    
-    def _get_forbidden_terms(self, skills: list, skill_levels: dict) -> list:
-        """
-        根据技能等级生成禁用术语列表
-        
-        Args:
-            skills: 技能列表
-            skill_levels: 技能等级字典
-            
-        Returns:
-            禁用术语列表
-        """
-        forbidden_terms = []
-        
-        # 通用高级术语库（level <= 5 都不应该知道）
-        advanced_terms = {
-            "react": [
-                "依赖数组", "dependency array", "浅比较", "shallow compare",
-                "Object.is", "useCallback", "useMemo", "useRef",
-                "cleanup", "清理函数", "闭包陷阱", "stale closure",
-                "reconciliation", "fiber", "concurrent mode", "suspense",
-                "批量更新", "批处理", "优先级调度"
-            ],
-            "rabbitmq": [
-                "publisher confirm", "mandatory", "durable", "persistent",
-                "disk flush", "镜像队列", "仲裁队列", "lazy queue",
-                "federation", "shovel", "prefetch", "ACK模式",
-                "消息持久化策略", "刷盘策略"
-            ],
-            "redis": [
-                "AOF重写", "RDB快照", "混合持久化", "主从复制",
-                "哨兵", "cluster", "gossip协议", "槽位",
-                "pipeline", "事务", "lua脚本", "pub/sub"
-            ],
-            "java": [
-                "JVM调优", "GC算法", "内存模型", "happens-before",
-                "volatile", "synchronized", "CAS", "AQS",
-                "线程池参数", "类加载机制", "双亲委派"
-            ],
-            "python": [
-                "GIL", "装饰器原理", "元类", "描述符",
-                "上下文管理器", "生成器表达式", "协程",
-                "asyncio事件循环", "内存管理机制"
-            ],
-            "sql": [
-                "执行计划", "索引覆盖", "回表", "最左前缀",
-                "MVCC", "隔离级别", "间隙锁", "死锁检测",
-                "查询优化器", "统计信息"
-            ],
-            "kubernetes": [
-                "etcd", "控制器模式", "operator", "CRD",
-                "亲和性", "污点", "容忍度", "HPA",
-                "存储类", "CNI", "CSI", "调度器"
-            ],
-            "system_design": [
-                "CAP定理", "BASE理论", "Paxos", "Raft",
-                "一致性哈希", "布隆过滤器", "限流算法",
-                "降级熔断", "分布式事务", "补偿机制"
-            ]
-        }
-        
-        # 基础术语库（level <= 3 也不应该知道）
-        basic_terms = {
-            "react": [
-                "组件生命周期", "状态管理", "props传递", "事件处理",
-                "条件渲染", "列表渲染", "表单处理"
-            ],
-            "rabbitmq": [
-                "交换机", "队列", "绑定", "路由键",
-                "消费者", "生产者", "虚拟主机"
-            ],
-            "redis": [
-                "字符串", "列表", "哈希", "集合", "有序集合",
-                "过期时间", "缓存穿透", "缓存雪崩"
-            ]
-        }
-        
-        for skill in skills:
-            skill_lower = skill.lower()
-            level = skill_levels.get(skill, 0)
-            
-            # level <= 3: 连基础术语都不应该知道细节
-            if level <= 3:
-                if skill_lower in advanced_terms:
-                    forbidden_terms.extend(advanced_terms[skill_lower])
-                if skill_lower in basic_terms:
-                    # level 3 对基础术语只能"听说过"，不能深入解释
-                    forbidden_terms.extend(basic_terms[skill_lower])
-            
-            # level 4-5: 不应该知道高级术语
-            elif level <= 5:
-                if skill_lower in advanced_terms:
-                    forbidden_terms.extend(advanced_terms[skill_lower])
-        
-        return list(set(forbidden_terms))  # 去重
-    
-    def _post_process_followup_answer(self, answer: str, skills: list, skill_levels: dict) -> str:
-        """
-        对追问回答进行后处理，替换禁用术语
-        
-        Args:
-            answer: 原始回答
-            skills: 技能列表
-            skill_levels: 技能等级字典
-            
-        Returns:
-            处理后的回答
-        """
-        forbidden_terms = self._get_forbidden_terms(skills, skill_levels)
-        
-        # 替换策略：将禁用术语替换为模糊表达
-        replacements = {
-            # React相关
-            "依赖数组": "那个...数组配置",
-            "dependency array": "那个数组参数",
-            "浅比较": "对比机制",
-            "shallow compare": "比较方式",
-            "useCallback": "某个hooks",
-            "useMemo": "某个优化方法",
-            "useRef": "某个hooks",
-            "cleanup": "清理的东西",
-            "清理函数": "清理的那部分",
-            "Object.is": "对比方法",
-            "闭包陷阱": "闭包的问题",
-            
-            # RabbitMQ相关
-            "publisher confirm": "发送确认机制",
-            "durable": "持久化配置",
-            "persistent": "持久化",
-            "mandatory": "某个参数",
-            "ACK模式": "确认模式",
-            
-            # 通用替换
-            "配置参数": "配置",
-            "具体配置": "一些配置",
-        }
-        
-        modified_answer = answer
-        found_terms = []
-        
-        for term in forbidden_terms:
-            if term.lower() in modified_answer.lower():
-                found_terms.append(term)
-                # 使用替换表或通用模糊化
-                replacement = replacements.get(term, "那个...我忘了叫什么")
-                # 大小写不敏感替换
-                import re
-                pattern = re.compile(re.escape(term), re.IGNORECASE)
-                modified_answer = pattern.sub(replacement, modified_answer)
-        
-        if found_terms:
-            logger.warning(f"⚠️  检测到并替换了禁用术语: {', '.join(found_terms[:5])}")
-            # 在回答末尾添加不确定性表达
-            if "这块" not in modified_answer and "说实话" not in modified_answer:
-                modified_answer += " 说实话这块我理解得不够深入。"
-        
-        return modified_answer
     
     def _build_system_prompt(self) -> str:
         """
