@@ -49,21 +49,25 @@ class InterviewEngine:
     
     def run_interview(
         self,
-        job_file: str,
-        company_file: str,
         candidate_config: Dict,
         mode: str = "demo",
-        domain_id: str = "tech"
+        domain_id: str = "tech",
+        job_config: Optional[Dict] = None,
+        company_config: Optional[Dict] = None,
+        job_file: Optional[str] = None,
+        company_file: Optional[str] = None
     ) -> InterviewResult:
         """
         执行一次完整的面试流程
         
         Args:
-            job_file: 职位配置文件名（不含路径）
-            company_file: 公司信息文件名（不含路径）
             candidate_config: 候选人配置字典
             mode: 面试模式 ("demo" 或 "full")
             domain_id: 领域ID（tech/marketing/healthcare等），默认为tech
+            job_config: 职位配置字典（优先）
+            company_config: 公司配置字典（优先）
+            job_file: 职位配置文件名（向后兼容）
+            company_file: 公司配置文件名（向后兼容）
             
         Returns:
             面试结果对象
@@ -75,10 +79,26 @@ class InterviewEngine:
         start_time = datetime.now()
         interview_id = str(uuid.uuid4())[:8]
         
-        # 1. 加载配置
-        logger.info("📋 步骤1: 加载配置文件...")
-        job_config = load_job_config(job_file)
-        company_config = load_company_config(company_file)
+        # 1. 加载/生成配置
+        logger.info("📋 步骤1: 加载配置...")
+        
+        # 优先使用传入的配置字典，否则从文件加载，最后使用动态生成
+        if job_config is None:
+            if job_file:
+                job_config = load_job_config(job_file)
+            else:
+                # 动态生成
+                from config import generate_domain_config
+                company_config, job_config = generate_domain_config(domain_id)
+        
+        if company_config is None:
+            if company_file:
+                company_config = load_company_config(company_file)
+            else:
+                # 如果job_config是动态生成的，company_config已经生成了
+                if not job_file:
+                    from config import generate_domain_config
+                    company_config, _ = generate_domain_config(domain_id)
         
         # 2. 初始化Agents
         logger.info("🤖 步骤2: 初始化面试官和候选人Agent...")
