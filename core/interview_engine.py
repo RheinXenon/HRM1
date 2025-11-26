@@ -230,11 +230,14 @@ class InterviewEngine:
             
             # 综合判断：LLM判定过度自信 或 规则检测可疑且得分较高
             # Phase 1: 使用标准化分数判断 (0-100分制)
-            # 阈值: 50分(中等) 和 60分(良好)
+            # 降低阈值以提高追问触发率：
+            # - 可疑度>=3 且 分数>=50（中等水平）
+            # - 可疑度>=2 且 分数>=65（良好水平） 
             should_followup = (
                 (confidence_level == "overconfident" and need_followup_by_llm) or
-                (detection["is_suspicious"] and normalized_score >= 50) or
-                (detection.get("suspicion_score", 0) >= 3 and normalized_score >= 60)
+                (detection["is_suspicious"] and normalized_score >= 45) or  # 降低基础阈值
+                (detection.get("suspicion_score", 0) >= 3 and normalized_score >= 50) or  # 降低中等阈值
+                (detection.get("suspicion_score", 0) >= 2 and normalized_score >= 65)  # 新增：轻度可疑+高分也追问
             )
             
             if should_followup:

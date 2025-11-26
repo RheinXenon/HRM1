@@ -137,12 +137,23 @@ class InterviewerAgent:
         if target_skills is None:
             target_skills = []
 
-        # 构建评估提示词
+        # 构建评估提示词（动态传入domain信号词）
         system_prompt = self._build_system_prompt()
+        
+        # 从domain获取信号词示例
+        high_level_terms = self.domain.get_high_level_terms()
+        technical_metrics = self.domain.get_technical_metrics()
+        
+        # 构建提示语
+        high_level_hint = f"（如{', '.join(high_level_terms[:3])}等）" if high_level_terms else ""
+        metrics_hint = f"（如{', '.join(technical_metrics[:3])}等）" if technical_metrics else ""
+        
         user_message = ANSWER_EVALUATION_PROMPT.format(
             question=question,
             answer=answer,
-            target_skills=", ".join(target_skills) if target_skills else "综合能力"
+            target_skills=", ".join(target_skills) if target_skills else "综合能力",
+            high_level_terms_hint=high_level_hint,
+            metrics_hint=metrics_hint
         )
 
         try:
@@ -341,8 +352,8 @@ class InterviewerAgent:
             signals.append("包含较多空话套话")
             suspicion_score += 1
         
-        # 最终判断：suspicion_score >= 4 认为可疑
-        suspicious = suspicion_score >= 4
+        # 最终判断：降低阈值，suspicion_score >= 3 认为可疑（提高追问触发率）
+        suspicious = suspicion_score >= 3
         
         # 确定建议追问的技能
         followup_skill = None

@@ -287,67 +287,153 @@ class RandomCandidateGenerator:
 
 
 class RandomCompanyGenerator:
-    """随机公司和职位生成器"""
+    """
+    随机公司和职位生成器
     
-    COMPANY_TYPES = [
-        "互联网创业公司", "传统软件企业", "金融科技公司", 
-        "电商平台", "游戏公司", "人工智能企业"
-    ]
+    注意：此类主要用于测试，生产环境请使用 config.generate_domain_config()
+    支持多领域配置（tech/marketing/healthcare）
+    """
     
-    JOB_TITLES = [
-        "高级后端工程师", "全栈工程师", "系统架构师",
-        "技术负责人", "后端开发工程师", "平台开发工程师"
-    ]
+    # 各领域的公司类型
+    COMPANY_TYPES_BY_DOMAIN = {
+        "tech": [
+            "互联网创业公司", "传统软件企业", "金融科技公司", 
+            "电商平台", "游戏公司", "人工智能企业"
+        ],
+        "marketing": [
+            "广告代理公司", "品牌咨询公司", "数字营销公司",
+            "公关公司", "媒体公司", "内容创作公司"
+        ],
+        "healthcare": [
+            "综合医院", "专科医院", "社区卫生中心",
+            "康复中心", "健康管理公司", "养老服务机构"
+        ]
+    }
     
-    def __init__(self, seed: Optional[int] = None):
+    # 各领域的职位名称
+    JOB_TITLES_BY_DOMAIN = {
+        "tech": [
+            "高级后端工程师", "全栈工程师", "系统架构师",
+            "技术负责人", "后端开发工程师", "平台开发工程师"
+        ],
+        "marketing": [
+            "营销经理", "品牌专员", "内容运营",
+            "数字营销专家", "社交媒体经理", "市场策划"
+        ],
+        "healthcare": [
+            "注册护士", "护理主管", "健康管理师",
+            "康复治疗师", "临床护理专家", "护理协调员"
+        ]
+    }
+    
+    def __init__(self, seed: Optional[int] = None, domain_id: str = "tech"):
+        """
+        初始化生成器
+        
+        Args:
+            seed: 随机种子
+            domain_id: 领域ID（tech/marketing/healthcare）
+        """
         if seed:
             random.seed(seed)
+        self.domain_id = domain_id
+        self.company_types = self.COMPANY_TYPES_BY_DOMAIN.get(domain_id, self.COMPANY_TYPES_BY_DOMAIN["tech"])
+        self.job_titles = self.JOB_TITLES_BY_DOMAIN.get(domain_id, self.JOB_TITLES_BY_DOMAIN["tech"])
     
     def generate_company(self) -> Dict[str, Any]:
-        """生成随机公司配置"""
-        company_type = random.choice(self.COMPANY_TYPES)
+        """生成随机公司配置（基于领域）"""
+        company_type = random.choice(self.company_types)
         
-        company_names = {
-            "互联网创业公司": ["极客科技", "创新网络", "未来互联"],
-            "传统软件企业": ["中软国际", "东软集团", "用友网络"],
-            "金融科技公司": ["蚂蚁金服", "京东数科", "平安科技"],
-            "电商平台": ["阿里巴巴", "京东", "拼多多"],
-            "游戏公司": ["腾讯游戏", "网易游戏", "米哈游"],
-            "人工智能企业": ["商汤科技", "旷视科技", "依图科技"]
+        # 各领域的公司名称池
+        company_names_by_domain = {
+            "tech": {
+                "互联网创业公司": ["极客科技", "创新网络", "未来互联"],
+                "传统软件企业": ["中软国际", "东软集团", "用友网络"],
+                "金融科技公司": ["蚂蚁金服", "京东数科", "平安科技"],
+                "电商平台": ["阿里巴巴", "京东", "拼多多"],
+                "游戏公司": ["腾讯游戏", "网易游戏", "米哈游"],
+                "人工智能企业": ["商汤科技", "旷视科技", "依图科技"]
+            },
+            "marketing": {
+                "广告代理公司": ["盛世广告", "博雅公关", "智威汤逊"],
+                "品牌咨询公司": ["品牌方略", "华与华", "特劳特"],
+                "数字营销公司": ["数字一百", "易传媒", "蓝色光标"],
+                "公关公司": ["万博宣伟", "爱德曼", "奥美"],
+                "媒体公司": ["分众传媒", "新潮传媒", "凤凰传媒"],
+                "内容创作公司": ["二更", "一条", "十点读书"]
+            },
+            "healthcare": {
+                "综合医院": ["市第一人民医院", "中心医院", "协和医院"],
+                "专科医院": ["肿瘤医院", "儿童医院", "妇产医院"],
+                "社区卫生中心": ["社区医疗中心", "街道卫生服务中心", "基层卫生院"],
+                "康复中心": ["康复医疗中心", "疗养康复院", "护理康复中心"],
+                "健康管理公司": ["美年大健康", "爱康国宾", "慈铭体检"],
+                "养老服务机构": ["太阳城养老", "亲和源", "泰康之家"]
+            }
         }
         
-        name = random.choice(company_names.get(company_type, ["科技公司"]))
+        domain_names = company_names_by_domain.get(self.domain_id, company_names_by_domain["tech"])
+        name = random.choice(domain_names.get(company_type, [f"{company_type}示例"]))
+        
+        # 各领域的企业文化
+        culture_by_domain = {
+            "tech": [
+                "扁平化管理，鼓励创新",
+                "注重技术深度，追求卓越",
+                "快速迭代，拥抱变化"
+            ],
+            "marketing": [
+                "创意驱动，追求卓越",
+                "以客户为中心，结果导向",
+                "开放协作，快速响应"
+            ],
+            "healthcare": [
+                "以患者为中心，关爱生命",
+                "专业严谨，持续学习",
+                "团队协作，守护健康"
+            ]
+        }
         
         return {
             "name": name,
             "type": company_type,
             "description": f"一家专注于{company_type}领域的企业",
-            "culture": random.choice([
-                "扁平化管理，鼓励创新",
-                "注重技术深度，追求卓越",
-                "快速迭代，拥抱变化"
-            ])
+            "culture": random.choice(culture_by_domain.get(self.domain_id, culture_by_domain["tech"]))
         }
     
     def generate_job(self, required_skills: List[str] = None) -> Dict[str, Any]:
-        """生成随机职位配置"""
-        title = random.choice(self.JOB_TITLES)
+        """生成随机职位配置（基于领域）"""
+        title = random.choice(self.job_titles)
         
-        # 如果没有指定技能，随机生成
+        # 如果没有指定技能，从domain加载
         if required_skills is None:
-            all_skills = [
-                "python", "java", "system_design", "sql", "redis",
-                "microservices", "api_design", "kubernetes"
+            from domains import DomainLoader
+            domain_loader = DomainLoader(self.domain_id)
+            all_skills = domain_loader.get_all_skills()
+            required_skills = random.sample(all_skills, min(random.randint(5, 8), len(all_skills)))
+        
+        # 各领域的职责描述
+        responsibilities_by_domain = {
+            "tech": [
+                "参与系统架构设计和优化",
+                "编写高质量、可维护的代码",
+                "解决复杂技术问题"
+            ],
+            "marketing": [
+                "制定和执行营销策略",
+                "管理品牌推广和市场活动",
+                "分析市场数据并优化营销效果"
+            ],
+            "healthcare": [
+                "提供专业的护理和健康服务",
+                "执行医疗护理计划和健康评估",
+                "确保患者安全和服务质量"
             ]
-            required_skills = random.sample(all_skills, random.randint(5, 8))
+        }
         
         return {
             "title": title,
             "required_skills": required_skills,
             "description": f"负责{title}相关工作",
-            "responsibilities": [
-                "参与系统架构设计和优化",
-                "编写高质量、可维护的代码",
-                "解决复杂技术问题"
-            ]
+            "responsibilities": responsibilities_by_domain.get(self.domain_id, responsibilities_by_domain["tech"])
         }

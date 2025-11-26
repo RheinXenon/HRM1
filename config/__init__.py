@@ -99,10 +99,21 @@ def generate_domain_config(domain_id: str = "tech") -> Tuple[Dict, Dict]:
     industries = domain_config.get("applicable_industries", [])
     roles = domain_config.get("typical_roles", [])
     
+    # 动态生成公司名称（根据领域特点）
+    company_name_map = {
+        "tech": "创新科技有限公司",
+        "marketing": "盛世广告传媒",
+        "healthcare": "仁心医疗机构"
+    }
+    company_name = company_name_map.get(
+        domain_id, 
+        f"{industries[0]}{random.choice(['集团', '公司', '中心', '机构'])}" if industries else "专业服务公司"
+    )
+    
     # 动态生成公司配置
     company_config = {
         "company_id": f"{domain_id}_company_001",
-        "name": f"{industries[0] if industries else '通用'}公司" if domain_id != "tech" else "创新科技有限公司",
+        "name": company_name,
         "industry": domain_name,
         "size": "100-500人",
         "stage": "成熟发展期",
