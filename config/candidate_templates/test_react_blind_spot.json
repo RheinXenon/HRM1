@@ -1,0 +1,55 @@
+{
+  "template_name": "React知识盲区测试候选人",
+  "description": "用于测试追问时是否会'圆过去'",
+  "profile": {
+    "name": "测试候选人",
+    "skills": {
+      "react": 3,
+      "python": 7,
+      "sql": 6,
+      "javascript": 5
+    },
+    "experience": {
+      "years": 3,
+      "level": "mid",
+      "projects": [
+        {
+          "name": "简单网站项目",
+          "role": "前端开发",
+          "duration": "3个月",
+          "tech_stack": ["React", "JavaScript"],
+          "achievement": "完成基础功能开发"
+        }
+      ]
+    },
+    "personality": {
+      "communication": {
+        "verbose": 60,
+        "technical": 70
+      },
+      "response": {
+        "confidence": 80,
+        "detail_orientation": 50,
+        "storytelling": 50
+      },
+      "emotion": {
+        "nervousness": 20,
+        "enthusiasm": 70
+      },
+      "self_perception": {
+        "self_awareness": 30
+      }
+    },
+    "knowledge_blind_spots": {
+      "overconfident_areas": [
+        {
+          "skill": "react",
+          "actual_level": 3,
+          "perceived_level": 7,
+          "description": "只做过简单的React项目，但会过度自信地谈论hooks、性能优化等高级话题"
+        }
+      ],
+      "underconfident_areas": []
+    }
+  }
+}
