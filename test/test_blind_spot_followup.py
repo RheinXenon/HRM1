@@ -19,14 +19,16 @@ def get_agents():
     from agents.candidate_agent import CandidateAgent, CandidateProfile
     from agents.interviewer_agent import InterviewerAgent
     from core.llm_client import LLMClient
-    return CandidateAgent, CandidateProfile, InterviewerAgent, LLMClient
+    from core.resume_generator import ResumeGenerator
+    from config import load_job_config, load_company_config
+    return CandidateAgent, CandidateProfile, InterviewerAgent, LLMClient, ResumeGenerator, load_job_config, load_company_config
 
 
 def test_blind_spot_followup():
     """测试知识盲区被追问时的表现"""
     
     # 延迟导入
-    CandidateAgent, CandidateProfile, InterviewerAgent, LLMClient = get_agents()
+    CandidateAgent, CandidateProfile, InterviewerAgent, LLMClient, ResumeGenerator, load_job_config, load_company_config = get_agents()
     
     print("\n" + "=" * 80)
     print("🔍 知识盲区追问测试")
@@ -79,10 +81,29 @@ def test_blind_spot_followup():
     print(f"   倾向: 低尽责性+低神经质 -> 容易过度自信")
     print()
     
-    # 创建LLM客户端和Agent
+    # 创建LLM客户端
     llm_client = LLMClient()
+    
+    # 生成候选人简历
+    print("-" * 80)
+    print("📄 生成候选人简历")
+    print("-" * 80)
+    print()
+    resume_generator = ResumeGenerator(llm_client=llm_client)
+    resume_data = resume_generator.generate_resume(
+        candidate_profile=candidate_profile,
+        save_to_file=False  # 测试不保存文件
+    )
+    print(f"✅ 简历已生成")
+    print()
+    
+    # 加载职位和公司配置
+    job_config = load_job_config("senior_backend")
+    company_config = load_company_config("tech_startup")
+    
+    # 创建Agent（传递简历数据）
     candidate = CandidateAgent(llm_client, candidate_profile)
-    interviewer = InterviewerAgent(llm_client)
+    interviewer = InterviewerAgent(llm_client, job_config, company_config, resume_data=resume_data)
     
     # 第一轮：初始问题
     print("-" * 80)

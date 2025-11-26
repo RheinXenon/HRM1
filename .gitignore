@@ -62,4 +62,6 @@ data/interviews/*
 !data/interviews/.gitkeep
 data/analysis/*
 !data/analysis/.gitkeep
+data/resumes/*
+!data/resumes/.gitkeep
 .windsurf/rules

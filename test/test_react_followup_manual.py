@@ -14,8 +14,9 @@ sys.path.insert(0, str(project_root))
 def main():
     """手动测试主函数"""
     # 延迟导入避免循环依赖
-    from config import load_candidate_template
+    from config import load_candidate_template, load_job_config, load_company_config
     from core.llm_client import LLMClient
+    from core.resume_generator import ResumeGenerator
     from agents.candidate_agent import CandidateAgent
     from agents.interviewer_agent import InterviewerAgent
     
@@ -35,14 +36,29 @@ def main():
     print(f"   人格特质: C={p.get('conscientiousness', 0.5):.2f}, N={p.get('neuroticism', 0.5):.2f}")
     print()
     
-    # 创建Agent
-    from config import load_job_config, load_company_config
+    # 创建LLM客户端
+    llm_client = LLMClient()
+    
+    # 生成候选人简历
+    print("-" * 80)
+    print("📄 生成候选人简历")
+    print("-" * 80)
+    print()
+    resume_generator = ResumeGenerator(llm_client=llm_client)
+    resume_data = resume_generator.generate_resume(
+        candidate_profile=profile,
+        save_to_file=False  # 测试不保存文件
+    )
+    print(f"✅ 简历已生成")
+    print()
+    
+    # 加载职位和公司配置
     job_config = load_job_config("senior_backend")
     company_config = load_company_config("tech_startup")
     
-    llm_client = LLMClient()
+    # 创建Agent（传递简历数据）
     candidate = CandidateAgent(llm_client, profile)
-    interviewer = InterviewerAgent(llm_client, job_config, company_config)
+    interviewer = InterviewerAgent(llm_client, job_config, company_config, resume_data=resume_data)
     
     # 第一轮：初始问题
     print("-" * 80)
