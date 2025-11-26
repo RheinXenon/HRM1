@@ -17,6 +17,8 @@
 - ✅ **知识盲区机制**：模拟候选人的知识误判（过度自信/过度谦虚）
 - ✅ **智能追问系统**：检测浅层回答，自动深入追问验证真实能力
 - ✅ **Few-Shot Negative Examples** 🆕：通过负面示例防止候选人"圆场"
+- ✅ **智能简历生成** 🆕：候选人自动生成个性化简历，可能存在夸大或过度谦虚
+- ✅ **基于简历提问**：面试官分析简历识别兴趣点，针对性提问验证能力
 - ✅ **随机性格生成**：支持4种策略（纯随机/原型/混合/极端）+ 6种原型
 - ✅ **多维度评分**：0-100标准化评分，支持深度/完整性/准确性等多个维度
 - ✅ **可配置性强**：技能水平、性格特质、经验背景均可灵活配置
@@ -28,6 +30,7 @@
 | **面试系统评估** | 测试面试官Agent的提问质量和评估准确性 | 验证面试流程有效性 |
 | **训练数据生成** | 自动生成大量高质量面试对话数据 | 用于模型训练和研究 |
 | **候选人模拟** | 模拟各类候选人特质（紧张、过度自信等） | 研究不同特质对面试的影响 |
+| **简历真实性分析** 🆕 | 对比简历描述与实际表现，检测夸大 | 研究简历可信度评估 |
 | **招聘流程优化** | 测试不同面试策略的效果 | 优化招聘决策流程 |
 | **跨行业研究** | 支持技术、营销、医疗等多个领域 | 领域适应性研究 |
 
@@ -48,7 +51,14 @@
 - 防止候选人通过"圆场"掩盖知识不足
 - 迫使候选人诚实承认不懂，真实反映能力水平
 
-#### 4. 跨行业领域支持
+#### 4. 智能简历生成系统 🆕
+- 根据候选人能力、性格和知识盲区自动生成个性化简历
+- 简历可能**夸大**过度自信领域，**低调描述**过度谦虚领域
+- 性格特质影响简历风格（外向性、尽责性等）
+- 面试官分析简历识别兴趣点，生成2-3个针对性问题
+- 简历数据保存至`data/resumes/`目录
+
+#### 5. 跨行业领域支持
 - **tech**：39个技能，覆盖backend/frontend/database/architecture/devops等
 - **marketing**：34个技能，覆盖策略/内容/数字营销/渠道管理等
 - **healthcare**：35个技能，覆盖临床/专科/管理/患者照护等
@@ -67,7 +77,8 @@ HRM1/
 │   └── prompts/                       # Prompt模板
 │       ├── __init__.py
 │       ├── candidate_prompts.py       # 候选人系统提示词（含Few-Shot Negative Examples）
-│       └── interviewer_prompts.py     # 面试官系统提示词
+│       ├── interviewer_prompts.py     # 面试官系统提示词
+│       └── resume_prompts.py          # 简历生成提示词 🆕
 │
 ├── config/                            # ⚙️ 配置文件
 │   ├── __init__.py                    # 配置加载器
@@ -78,9 +89,9 @@ HRM1/
 │   │   ├── overconfident_candidate.json  # 过度自信候选人
 │   │   ├── underconfident_candidate.json # 不自信候选人
 │   │   └── test_react_blind_spot.json    # React知识盲区测试模板
-│   ├── companies/                     # 公司信息配置
+│   ├── companies_template/            # 公司信息配置模板
 │   │   └── tech_startup.json          # 科技创业公司
-│   └── jobs/                          # 职位需求配置
+│   └── jobs_template/                 # 职位需求配置模板
 │       └── senior_backend.json        # 高级后端工程师
 │
 ├── core/                              # 🎯 核心引擎
@@ -91,6 +102,7 @@ HRM1/
 │   ├── llm_client.py                  # LLM客户端（封装API调用）
 │   ├── personality_generator.py       # 随机性格生成器（4种策略+6种原型）
 │   ├── random_generator.py            # 随机候选人生成器（支持多领域）
+│   ├── resume_generator.py            # 简历生成器（个性化简历，可能夸大/谦虚）
 │   └── score_normalizer.py            # 评分标准化器（多维度→0-100分）
 │
 ├── domains/                           # 🌍 领域配置（支持跨行业通用化）
@@ -114,7 +126,8 @@ HRM1/
 │
 ├── data/                              # 💾 数据存储
 │   ├── interviews/                    # 面试记录（JSON格式）
-│   └── analysis/                      # 分析结果
+│   ├── analysis/                      # 分析结果
+│   └── resumes/                       # 简历数据
 │
 ├── Docs/                              # 📚 项目文档
 │   ├── LLM面试官系统学术研究综述_2024-2025.md
@@ -122,6 +135,7 @@ HRM1/
 │   ├── Phase1多维度评分优化说明.md
 │   ├── 手写记录.md
 │   ├── 新评分方案应用总结.md
+│   ├── 简历生成功能说明.md                  # 智能简历生成文档 🆕
 │   ├── 知识盲区追问防圆场解决方案.md        # Few-Shot Negative Examples方案
 │   ├── 知识误判功能说明.md                  # 知识盲区机制文档
 │   ├── 第一次随机测试分析报告.md
@@ -134,6 +148,8 @@ HRM1/
 │       └── 面试官追问能力改进报告.md
 │
 ├── test/                              # 🧪 测试套件
+│   ├── archive/                       # 历史测试文件存档
+│   ├── data/                          # 测试数据
 │   ├── run_all_tests.py               # 测试运行器
 │   ├── test_blind_spot_behavior.py    # 知识盲区行为测试
 │   ├── test_blind_spot_followup.py    # 知识盲区追问测试
@@ -151,9 +167,11 @@ HRM1/
 │   ├── test_react_followup_manual.py  # React知识盲区手动测试
 │   └── test_score_normalization.py    # 评分标准化测试
 │
-├── frontend（暂时不用）/               # 🎨 前端界面（未启用）
+├── frontend/                          # 🎨 前端界面（未启用）
 │
 ├── main_v3.py                         # 🚀 主程序入口（v3.0版本）
+├── main_v2(废弃仅备份).py              # 已废弃的v2版本
+├── main(废弃仅备份).py                 # 已废弃的v1版本
 ├── requirements.txt                   # 📦 Python依赖
 ├── .env                               # 🔐 环境变量配置
 ├── .gitignore                         # Git忽略规则
@@ -166,9 +184,9 @@ HRM1/
 |------|------|----------|
 | **agents/** | Agent实现 | 面试官/候选人双Agent架构，支持知识盲区、追问机制 |
 | **config/** | 配置管理 | 候选人模板、公司/职位配置 |
-| **core/** | 核心引擎 | 面试流程控制、LLM调用、评分标准化 |
+| **core/** | 核心引擎 | 面试流程控制、简历生成、LLM调用、评分标准化 |
 | **domains/** | 领域配置 | 支持tech/marketing/healthcare等跨行业面试 |
-| **Docs/** | 项目文档 | 功能说明、实施报告、使用指南 |
+| **Docs/** | 项目文档 | 功能说明、实施报告、使用指南（15个文档） |
 | **test/** | 测试套件 | 16个测试文件，覆盖核心功能 |
 
 ---
@@ -367,6 +385,33 @@ for qa in result.conversation_log:
         print(f"回答: {qa['answer']}")
 ```
 
+**简历生成示例：** 🆕
+
+```python
+from core.interview_engine import InterviewEngine
+from config import load_candidate_template
+
+# 加载候选人配置
+candidate_config = load_candidate_template("overconfident_candidate")
+
+# 运行面试（会自动生成简历）
+engine = InterviewEngine()
+result = engine.run_interview(
+    candidate_config=candidate_config,
+    mode="full",
+    domain_id="tech"
+)
+
+# 查看生成的简历数据
+print(f"简历可信度: {result.resume_data['meta']['credibility_score']}/100")
+print(f"可能夸大的领域: {result.resume_data['meta']['exaggerated_areas']}")
+
+# 查看基于简历的针对性问题
+resume_questions = [qa for qa in result.conversation_log 
+                   if qa.get('is_resume_based', False)]
+print(f"基于简历生成了 {len(resume_questions)} 个针对性问题")
+```
+
 **输出示例**：
 
 ```
@@ -400,6 +445,7 @@ for qa in result.conversation_log:
 
 | 文档 | 说明 | 链接 |
 |------|------|------|
+| **简历生成功能说明** 🆕 | 智能简历生成、基于简历提问 | [查看](Docs/简历生成功能说明.md) |
 | **领域通用化使用指南** | 如何添加新领域、跨行业使用 | [查看](Docs/领域通用化使用指南.md) |
 | **知识盲区机制文档** | 知识误判功能说明 | [查看](Docs/知识误判功能说明.md) |
 | **知识盲区追问防圆场方案** | Few-Shot Negative Examples实施 | [查看](Docs/知识盲区追问防圆场解决方案.md) |
@@ -466,13 +512,22 @@ for qa in result.conversation_log:
 - [x] 性格驱动回答生成
 - [x] 候选人模板库
 
-### 🔄 Phase 7 - 批量测试（进行中）
+### ✅ Phase 7 - 简历生成系统（已完成）🆕
+- [x] 基于候选人配置的个性化简历生成
+- [x] 知识盲区影响简历描述（夸大/谦虚）
+- [x] 性格特质影响简历风格
+- [x] 面试官基于简历生成针对性问题
+- [x] 简历数据保存和管理
+
+### 🔄 Phase 8 - 批量测试（进行中）
 - [ ] 批量配置管理
 - [ ] 并行面试执行
 - [ ] 多候选人对比分析
 - [ ] 批量结果导出
 
-### 📋 Phase 8 - 数据分析（计划中）
+### 📋 Phase 9 - 数据分析（计划中）
+- [ ] 简历可信度评分细化
+- [ ] 简历 vs 实际表现对比分析
 - [ ] 特质影响分析
 - [ ] 可视化报表
 - [ ] 统计分析工具
@@ -500,6 +555,7 @@ python test/test_personality_generator.py   # 性格生成器测试
 - ✅ 知识盲区行为
 - ✅ 追问机制触发
 - ✅ Few-Shot Negative Examples效果
+- ✅ 简历生成和基于简历提问 🆕
 - ✅ 评分标准化
 - ✅ 性格生成器
 - ✅ LLM API连接
@@ -547,15 +603,16 @@ python test/test_personality_generator.py   # 性格生成器测试
 
 ## 📊 项目统计
 
-- **代码行数**：~8000+ 行Python代码
+- **代码行数**：~9000+ 行Python代码
 - **测试文件**：16个测试文件
-- **文档数量**：14个Markdown文档
+- **文档数量**：15个Markdown文档
 - **支持领域**：3个内置领域（可无限扩展）
 - **候选人模板**：6个预设模板
 - **技能总数**：108个技能（跨3个领域）
+- **核心功能**：简历生成、智能追问、知识盲区检测、多维评分
 
 ---
 
-**创建日期**：2024年11月  
-**最后更新**：2024年11月26日  
+**创建日期**：2025年11月  
+**最后更新**：2025年11月26日  
 **版本**：v3.0 (统一交互式架构)
