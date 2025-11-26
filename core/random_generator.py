@@ -90,7 +90,7 @@ class RandomCandidateGenerator:
         return dict(list(skills.items())[:num_skills])
     
     def generate_experience(self, level: str = "mid") -> Dict[str, Any]:
-        """生成工作经验"""
+        """生成工作经验（从领域配置读取）"""
         level_experience = {
             "junior": (1, 3),
             "mid": (3, 6),
@@ -104,20 +104,26 @@ class RandomCandidateGenerator:
         num_projects = random.randint(2, 4)
         projects = []
         
-        project_names = [
-            "企业管理系统", "电商平台", "数据分析平台", "在线教育系统",
-            "物流管理系统", "金融交易系统", "社交媒体应用", "智能推荐引擎"
-        ]
+        # 从领域配置中读取项目、角色和成就
+        typical_projects = self.domain.get_typical_projects()
+        typical_roles = self.domain.get_typical_roles()
+        typical_achievements = self.domain.get_typical_achievements()
         
-        roles = ["后端开发", "全栈开发", "技术负责人", "架构师", "核心开发"]
+        # 如果配置为空，使用默认值
+        if not typical_projects:
+            typical_projects = ["项目A", "项目B", "项目C"]
+        if not typical_roles:
+            typical_roles = ["团队成员", "项目负责人"]
+        if not typical_achievements:
+            typical_achievements = ["完成项目目标", "获得好评"]
         
         for i in range(num_projects):
             duration_months = random.randint(3, 18)
             projects.append({
-                "name": random.choice(project_names),
-                "role": random.choice(roles),
+                "name": random.choice(typical_projects),
+                "role": random.choice(typical_roles),
                 "duration": f"{duration_months}个月",
-                "achievement": "完成核心功能开发" if random.random() > 0.5 else "主导系统架构设计"
+                "achievement": random.choice(typical_achievements)
             })
         
         return {

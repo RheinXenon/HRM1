@@ -54,7 +54,7 @@ def select_domain() -> str:
         print(f"{i}. {domain_id} - {domain_name}")
         domain_map[str(i)] = domain_id
     
-    choice = input(f"\n请选择领域 (1-{len(domains)}, 默认1-tech): ").strip() or "1"
+    choice = input(f"\n请选择领域 (1-{len(domains)}, 默认1): ").strip() or "1"
     return domain_map.get(choice, "tech")
 
 
@@ -99,13 +99,13 @@ def select_personality_strategy() -> tuple:
     print("3. extreme - 极端型（有趣的边界情况）")
     print("4. uniform - 完全随机")
     print()
-    print("可选的性格原型:")
-    print("5. confident - 自信型")
-    print("6. anxious - 焦虑型")
-    print("7. creative - 创造型")
-    print("8. reliable - 可靠型")
-    print("9. friendly - 友善型")
-    print("10. analytical - 分析型")
+    print("可选的性格原型（大五人格 O=开放性 C=尽责性 E=外向性 A=宜人性 N=神经质）:")
+    print("5. confident - 自信型      [O:0.65 C:0.70 E:0.80 A:0.60 N:0.20]")
+    print("6. anxious - 焦虑型        [O:0.50 C:0.65 E:0.30 A:0.55 N:0.75]")
+    print("7. creative - 创造型       [O:0.85 C:0.55 E:0.65 A:0.60 N:0.45]")
+    print("8. reliable - 可靠型       [O:0.55 C:0.85 E:0.50 A:0.70 N:0.30]")
+    print("9. friendly - 友善型       [O:0.60 C:0.60 E:0.80 A:0.85 N:0.35]")
+    print("10. analytical - 分析型    [O:0.75 C:0.80 E:0.45 A:0.50 N:0.40]")
     
     choice = input("\n请选择 (1-10, 默认1-normal): ").strip() or "1"
     

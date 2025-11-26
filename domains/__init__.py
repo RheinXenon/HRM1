@@ -56,6 +56,21 @@ class DomainLoader:
             self._domain_config = self._load_json("domain_config.json")
         return self._domain_config
     
+    def get_typical_roles(self) -> List[str]:
+        """获取典型角色列表"""
+        config = self.get_domain_config()
+        return config.get("typical_roles", [])
+    
+    def get_typical_projects(self) -> List[str]:
+        """获取典型项目列表"""
+        config = self.get_domain_config()
+        return config.get("typical_projects", [])
+    
+    def get_typical_achievements(self) -> List[str]:
+        """获取典型成就列表"""
+        config = self.get_domain_config()
+        return config.get("typical_achievements", [])
+    
     def get_skills_taxonomy(self) -> Dict:
         """获取技能分类体系"""
         if self._skills_taxonomy is None:
