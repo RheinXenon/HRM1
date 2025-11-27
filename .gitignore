@@ -64,6 +64,11 @@ data/analysis/*
 !data/analysis/.gitkeep
 data/resumes/*
 !data/resumes/.gitkeep
+
+data/memory/*
+!data/memory/.gitkeep
+data/reflections/*
+!data/reflections/.gitkeep
 # .windsurf/rules
 
 test/data/*
