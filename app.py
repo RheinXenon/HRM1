@@ -61,6 +61,7 @@ st.markdown("""
 def main():
     # 标题
     st.markdown('<h1 class="main-header">🎯 HR 智能面试系统 M1A5</h1>', unsafe_allow_html=True)
+    st.info(f"测试信息：当前 Streamlit 版本 {st.__version__}")
     
     st.markdown("---")
     

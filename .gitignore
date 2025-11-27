@@ -58,12 +58,12 @@ data/app.log
 htmlcov/
 
 # 临时放出
-# data/interviews/*
-# !data/interviews/.gitkeep
-# data/analysis/*
-# !data/analysis/.gitkeep
-# data/resumes/*
-# !data/resumes/.gitkeep
+data/interviews/*
+!data/interviews/.gitkeep
+data/analysis/*
+!data/analysis/.gitkeep
+data/resumes/*
+!data/resumes/.gitkeep
 # .windsurf/rules
 
 test/data/*
