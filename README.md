@@ -13,7 +13,7 @@
 ### 🎯 核心特点
 
 - ✅ **双Agent架构**：面试官Agent + 候选人Agent 完全自动化对话
-- ✅ **跨行业支持** 🆕：内置tech/marketing/healthcare领域，可扩展至任意行业
+- ✅ **跨行业支持** 🆕：内置tech/marketing/healthcare/supply_chain_scm_saaS四大领域，可扩展至任意行业
 - ✅ **知识盲区机制**：模拟候选人的知识误判（过度自信/过度谦虚）
 - ✅ **智能追问系统**：检测浅层回答，自动深入追问验证真实能力
 - ✅ **Few-Shot Negative Examples** 🆕：通过负面示例防止候选人"圆场"
@@ -32,7 +32,7 @@
 | **候选人模拟** | 模拟各类候选人特质（紧张、过度自信等） | 研究不同特质对面试的影响 |
 | **简历真实性分析** 🆕 | 对比简历描述与实际表现，检测夸大 | 研究简历可信度评估 |
 | **招聘流程优化** | 测试不同面试策略的效果 | 优化招聘决策流程 |
-| **跨行业研究** | 支持技术、营销、医疗等多个领域 | 领域适应性研究 |
+| **跨行业研究** | 支持技术、营销、医疗、供应链等多个领域 | 领域适应性研究 |
 
 ---
 
@@ -53,8 +53,8 @@
 ### 面试历史记录
 ![面试历史记录](images/面试历史记录.png)
 
-### 领域配置界面（开发中）
-![领域配置界面](images/领域配置界面（还在开发中）.png)
+### 领域配置界面
+![领域配置界面](images/领域配置界面.png)
 
 ---
 
@@ -83,9 +83,10 @@
 - 简历数据保存至`data/resumes/`目录
 
 #### 5. 跨行业领域支持
-- **tech**：39个技能，覆盖backend/frontend/database/architecture/devops等
-- **marketing**：34个技能，覆盖策略/内容/数字营销/渠道管理等
-- **healthcare**：35个技能，覆盖临床/专科/管理/患者照护等
+- **tech**：技术/互联网（33个技能），覆盖backend/frontend/database/architecture/devops等
+- **marketing**：营销/传媒（28个技能），覆盖策略/内容/数字营销/渠道管理等
+- **healthcare**：医疗/护理（29个技能），覆盖临床/专科/管理/患者照护等
+- **supply_chain_scm_saaS**：供应链管理SaaS/制造业（40个技能），覆盖采购/物流/库存/生产排程等
 - 支持自定义添加新领域，无需修改代码
 
 ---
@@ -134,18 +135,23 @@ HRM1/
 │   ├── __init__.py                    # DomainLoader加载器
 │   ├── tech/                          # 技术/互联网领域
 │   │   ├── domain_config.json         # 领域元信息
-│   │   ├── skills_taxonomy.json       # 技能分类体系（39个技能）
+│   │   ├── skills_taxonomy.json       # 技能分类体系（33个技能）
 │   │   ├── assessment_signals.json    # 评估信号词汇（22个高级术语）
 │   │   └── question_templates.json    # 问题模板
 │   ├── marketing/                     # 营销/传媒领域
 │   │   ├── domain_config.json
-│   │   ├── skills_taxonomy.json       # 技能分类体系（34个技能）
+│   │   ├── skills_taxonomy.json       # 技能分类体系（28个技能）
 │   │   ├── assessment_signals.json    # 评估信号词汇（18个营销术语）
 │   │   └── question_templates.json
-│   └── healthcare/                    # 医疗/护理领域
+│   ├── healthcare/                    # 医疗/护理领域
+│   │   ├── domain_config.json
+│   │   ├── skills_taxonomy.json       # 技能分类体系（29个技能）
+│   │   ├── assessment_signals.json    # 评估信号词汇（15个护理术语）
+│   │   └── question_templates.json
+│   └── supply_chain_scm_saaS/         # 供应链管理SaaS（制造业）
 │       ├── domain_config.json
-│       ├── skills_taxonomy.json       # 技能分类体系（35个技能）
-│       ├── assessment_signals.json    # 评估信号词汇（15个护理术语）
+│       ├── skills_taxonomy.json       # 技能分类体系（40个技能）
+│       ├── assessment_signals.json    # 评估信号词汇（供应链术语）
 │       └── question_templates.json
 │
 ├── data/                              # 💾 数据存储
@@ -153,47 +159,81 @@ HRM1/
 │   ├── analysis/                      # 分析结果
 │   └── resumes/                       # 简历数据
 │
-├── Docs/                              # 📚 项目文档
+├── Docs/                              # 📚 项目文档（24个文档）
 │   ├── LLM面试官系统学术研究综述_2024-2025.md
 │   ├── Phase1_实施完成报告.md
 │   ├── Phase1多维度评分优化说明.md
+│   ├── main_v3_更新说明.md
+│   ├── 人格系统重构说明.md
+│   ├── 前端轮询优化说明.md
+│   ├── 前端页面实现.md
+│   ├── 动态配置生成说明.md
+│   ├── 域配置_切换域问题修复说明.md
+│   ├── 域配置管理使用指南.md
+│   ├── 大五人格使用规范.md
 │   ├── 手写记录.md
 │   ├── 新评分方案应用总结.md
-│   ├── 简历生成功能说明.md                  # 智能简历生成文档 🆕
 │   ├── 知识盲区追问防圆场解决方案.md        # Few-Shot Negative Examples方案
 │   ├── 知识误判功能说明.md                  # 知识盲区机制文档
+│   ├── 硬编码问题修复总结.md
 │   ├── 第一次随机测试分析报告.md
+│   ├── 简历生成功能说明.md                  # 智能简历生成文档 🆕
 │   ├── 评分标准化实施方案.md                # 0-100分标准化文档
 │   ├── 追问机制说明.md                      # 追问触发逻辑
+│   ├── 配置加载优化说明.md
 │   ├── 随机性格系统使用指南.md              # 性格生成系统文档
 │   ├── 领域通用化使用指南.md                # 跨行业支持文档
 │   └── archive/                             # 历史文档存档
 │       ├── 自动面试系统-功能文档.md
 │       └── 面试官追问能力改进报告.md
 │
-├── test/                              # 🧪 测试套件
-│   ├── archive/                       # 历史测试文件存档
+├── test/                              # 🧪 测试套件（17个测试文件）
+│   ├── archive/                       # 历史测试文件存档（9个）
+│   │   ├── test_comprehensive.py
+│   │   ├── test_followup.py
+│   │   ├── test_knowledge_misjudgment.py
+│   │   ├── test_llm_scoring.py
+│   │   ├── test_llm_scoring_quick.py
+│   │   ├── test_random_demo_mode.py
+│   │   ├── test_random_full_mode.py
+│   │   ├── test_react_followup_manual.py
+│   │   └── test_score_normalization.py
 │   ├── data/                          # 测试数据
 │   ├── run_all_tests.py               # 测试运行器
 │   ├── test_blind_spot_behavior.py    # 知识盲区行为测试
 │   ├── test_blind_spot_followup.py    # 知识盲区追问测试
-│   ├── test_comprehensive.py          # 综合功能测试
+│   ├── test_domain_generator.py       # 域生成器测试
 │   ├── test_domain_loader.py          # 领域加载器测试
+│   ├── test_dynamic_config.py         # 动态配置测试
 │   ├── test_followup.py               # 追问机制测试
 │   ├── test_iflow_api.py              # iFlow API连接测试
-│   ├── test_knowledge_misjudgment.py  # 知识误判测试
-│   ├── test_llm_scoring.py            # LLM评分测试
-│   ├── test_llm_scoring_quick.py      # 快速评分测试
 │   ├── test_overconfident_improved.py # 过度自信候选人测试
 │   ├── test_personality_generator.py  # 性格生成器测试
-│   ├── test_random_demo_mode.py       # 随机Demo模式测试
-│   ├── test_random_full_mode.py       # 随机完整模式测试
-│   ├── test_react_followup_manual.py  # React知识盲区手动测试
-│   └── test_score_normalization.py    # 评分标准化测试
+│   └── 测试脚本说明.md                 # 测试说明文档
 │
-├── frontend/                          # 🎨 前端界面（未启用）
+├── frontend/                          # 🎨 前端工具模块
+│   ├── __init__.py                    # 模块导出
+│   ├── interview_controller.py        # 面试流程控制器（多线程）
+│   ├── data_loader.py                 # 历史数据加载器
+│   ├── visualizations.py              # 可视化图表工具
+│   └── README.md                      # 前端模块说明
 │
-├── main_v3.py                         # 🚀 主程序入口（v3.0版本）
+├── pages/                             # 📄 Streamlit多页面应用
+│   ├── 1_🎮_面试控制台.py             # 面试配置和启动页面
+│   ├── 2_📊_历史记录.py               # 面试记录查看和分析
+│   └── 3_⚙️_域配置.py                # 领域配置管理界面
+│
+├── images/                            # 🖼️ 系统界面截图
+│   ├── 首页界面.png
+│   ├── 快速开始和总览.png
+│   ├── 面试过程细节展示.png
+│   ├── 面试结果详解.png
+│   ├── 面试历史记录.png
+│   └── 领域配置界面.png
+│
+├── app.py                             # 🎨 Streamlit前端主页
+├── run_app.py                         # 🚀 前端启动脚本（推荐使用）
+├── main_v3.py                         # � 控制台测试入口（开发调试用）
 ├── main_v2(废弃仅备份).py              # 已废弃的v2版本
 ├── main(废弃仅备份).py                 # 已废弃的v1版本
 ├── requirements.txt                   # 📦 Python依赖
@@ -210,12 +250,27 @@ HRM1/
 | **config/** | 配置管理 | 候选人模板、公司/职位配置 |
 | **core/** | 核心引擎 | 面试流程控制、简历生成、LLM调用、评分标准化 |
 | **domains/** | 领域配置 | 支持tech/marketing/healthcare等跨行业面试 |
-| **Docs/** | 项目文档 | 功能说明、实施报告、使用指南（15个文档） |
-| **test/** | 测试套件 | 16个测试文件，覆盖核心功能 |
+| **Docs/** | 项目文档 | 功能说明、实施报告、使用指南（24个文档） |
+| **test/** | 测试套件 | 17个测试文件（8个主测试+9个存档），覆盖核心功能 |
+| **frontend/** | 前端工具 | 面试控制器、数据加载器、可视化图表 |
+| **pages/** | Streamlit页面 | 面试控制台、历史记录、域配置管理 |
 
 ---
 
 ## 🚀 快速开始
+
+### 📌 推荐使用方式
+
+**直接运行 Streamlit 前端应用**（推荐）：
+```bash
+python run_app.py
+```
+
+系统将自动启动 Web 界面并在浏览器中打开，提供完整的可视化操作体验。
+
+> 💡 **说明**：`main_v3.py` 目前主要用于控制台测试和开发调试，生产环境建议使用 `run_app.py` 启动前端界面。
+
+---
 
 ### 1. 环境准备
 
@@ -256,11 +311,25 @@ QWEN_MODEL=qwen3-max
 #### 📋 快速参考
 
 | 命令 | 说明 | 执行时间 | 适合场景 |
-|------|------|---------|---------|| `python main_v3.py` | 交互式启动 | ~3-10分钟 | 所有场景 |
+|------|------|---------|---------|
+| `python run_app.py` | **启动Web前端**（推荐） | 即时启动 | 生产使用、可视化操作 |
+| `python main_v3.py` | 控制台测试模式 | ~3-10分钟 | 开发调试、命令行测试 |
 
-#### 📋 命令行使用（推荐）
+#### 方式1：Web前端界面（推荐）
 
-**启动面试系统**：
+**启动 Streamlit 应用**：
+```bash
+python run_app.py
+```
+
+应用将自动打开浏览器，提供完整的可视化界面，包括：
+- 🎮 **面试控制台**：配置和启动面试
+- 📊 **历史记录**：查看所有面试记录和详细分析
+- ⚙️ **域配置**：管理领域配置和技能体系
+
+#### 方式2：命令行测试模式
+
+**用于开发调试和控制台测试**：
 ```bash
 python main_v3.py
 ```
@@ -303,9 +372,10 @@ python main_v3.py
 - **性格原型**：confident、nervous、technical、storyteller、enthusiastic、reserved
 
 **支持领域**
-- **tech**：技术/互联网（39个技能）
-- **marketing**：营销/传媒（34个技能）
-- **healthcare**：医疗/护理（35个技能）
+- **tech**：技术/互联网（33个技能）
+- **marketing**：营销/传媒（28个技能）
+- **healthcare**：医疗/护理（29个技能）
+- **supply_chain_scm_saaS**：供应链管理SaaS/制造业（40个技能）
 
 #### 💡 使用示例
 
@@ -469,13 +539,17 @@ print(f"基于简历生成了 {len(resume_questions)} 个针对性问题")
 
 | 文档 | 说明 | 链接 |
 |------|------|------|
+| **前端页面实现** 🆕 | Streamlit前端完整实现文档 | [查看](Docs/前端页面实现.md) |
 | **简历生成功能说明** 🆕 | 智能简历生成、基于简历提问 | [查看](Docs/简历生成功能说明.md) |
 | **领域通用化使用指南** | 如何添加新领域、跨行业使用 | [查看](Docs/领域通用化使用指南.md) |
+| **域配置管理使用指南** | 领域配置界面使用说明 | [查看](Docs/域配置管理使用指南.md) |
+| **动态配置生成说明** | 动态生成候选人和公司配置 | [查看](Docs/动态配置生成说明.md) |
 | **知识盲区机制文档** | 知识误判功能说明 | [查看](Docs/知识误判功能说明.md) |
 | **知识盲区追问防圆场方案** | Few-Shot Negative Examples实施 | [查看](Docs/知识盲区追问防圆场解决方案.md) |
 | **评分标准化方案** | 0-100分多维度评分系统 | [查看](Docs/评分标准化实施方案.md) |
 | **追问机制说明** | 智能追问触发逻辑 | [查看](Docs/追问机制说明.md) |
 | **随机性格系统指南** | 性格生成器使用方法 | [查看](Docs/随机性格系统使用指南.md) |
+| **大五人格使用规范** | Big Five人格模型应用规范 | [查看](Docs/大五人格使用规范.md) |
 | **Phase1实施报告** | 多维度评分优化总结 | [查看](Docs/Phase1_实施完成报告.md) |
 
 ---
@@ -485,11 +559,13 @@ print(f"基于简历生成了 {len(resume_questions)} 个针对性问题")
 | 类别 | 技术 | 说明 |
 |------|------|------|
 | **编程语言** | Python 3.10+ | 核心开发语言 |
+| **前端框架** | Streamlit | Web界面框架 |
+| **可视化** | Plotly | 交互式图表库 |
 | **LLM模型** | qwen3-max | 通过iflow API访问 |
 | **API接口** | OpenAI Compatible | 兼容OpenAI接口格式 |
 | **数据存储** | JSON | 面试记录和配置文件 |
 | **日志系统** | loguru | 结构化日志输出 |
-| **测试框架** | pytest | 16个测试文件 |
+| **测试框架** | pytest | 17个测试文件 |
 | **代码风格** | Python标准 | PEP 8规范 |
 
 ---
@@ -526,7 +602,7 @@ print(f"基于简历生成了 {len(resume_questions)} 个针对性问题")
 - [x] 技能分类体系
 - [x] 评估信号词汇
 - [x] 问题模板
-- [x] 内置3个领域（tech/marketing/healthcare）
+- [x] 内置4个领域（tech/marketing/healthcare/supply_chain_scm_saaS）
 - [x] DomainLoader加载器
 - [x] 支持自定义扩展
 
@@ -543,11 +619,16 @@ print(f"基于简历生成了 {len(resume_questions)} 个针对性问题")
 - [x] 面试官基于简历生成针对性问题
 - [x] 简历数据保存和管理
 
-### 🔄 Phase 8 - 批量测试（进行中）
-- [ ] 批量配置管理
-- [ ] 并行面试执行
-- [ ] 多候选人对比分析
-- [ ] 批量结果导出
+### ✅ Phase 8 - Streamlit前端界面（已完成基础功能）
+- [x] Web应用基础架构（app.py + run_app.py）
+- [x] 面试控制台页面（配置和启动面试）
+- [x] 历史记录查看（详细分析和可视化）
+- [x] 领域配置管理界面（创建和编辑领域）
+- [x] 实时面试进度展示（消息队列机制）
+- [x] 多线程异步执行（InterviewController）
+- [x] 数据可视化图表（7种图表类型）
+- [ ] 交互式评分调整（待优化）
+- [ ] 实时对话干预（待开发）
 
 ### 📋 Phase 9 - 数据分析（计划中）
 - [ ] 简历可信度评分细化
@@ -557,11 +638,39 @@ print(f"基于简历生成了 {len(resume_questions)} 个针对性问题")
 - [ ] 统计分析工具
 - [ ] 导出功能增强（CSV/Excel/PDF）
 
+### 🎯 Phase 10 - 面试官效能提升（规划中）
+
+**目标**：将系统从纯模拟测试扩展到真实面试场景应用
+
+#### 真实场景应用
+- [ ] **真人候选人模式**：支持真人替换模拟候选人，系统作为辅助面试工具
+- [ ] **实时语音交互**：集成语音识别和合成，支持语音面试
+- [ ] **多轮面试管理**：支持初试、复试等多轮流程
+- [ ] **协同面试模式**：多位面试官协同评估
+
+#### HR职位能力辨识
+- [ ] **HR技能评估体系**：建立HR专业能力评估标准
+- [ ] **HR领域配置**：招聘、培训、绩效管理等HR细分领域
+- [ ] **HR胜任力模型**：评估HR的沟通能力、判断力、专业知识
+- [ ] **面试官能力诊断**：分析面试官提问质量和评估准确性
+
+#### 分析效能提升
+- [ ] **面试质量评分**：评估面试问题的深度和有效性
+- [ ] **偏见检测**：识别面试中的认知偏见和不公平倾向
+- [ ] **最佳实践推荐**：基于历史数据推荐高效面试策略
+- [ ] **能力预测模型**：根据面试表现预测候选人实际工作表现
+
+**应用场景扩展**：
+1. **HR培训**：训练HR面试技巧，提升面试官专业能力
+2. **候选人准备**：为求职者提供面试模拟和反馈
+3. **招聘流程优化**：数据驱动的招聘决策支持
+4. **人才测评**：标准化的能力评估工具
+
 ---
 
 ## 测试
 
-系统包含完整的测试套件（16个测试文件）：
+系统包含完整的测试套件（17个测试文件）：
 
 ```bash
 # 运行所有测试
@@ -575,15 +684,15 @@ python test/test_personality_generator.py   # 性格生成器测试
 ```
 
 **测试覆盖**：
-- ✅ 领域配置加载
-- ✅ 知识盲区行为
-- ✅ 追问机制触发
-- ✅ Few-Shot Negative Examples效果
-- ✅ 简历生成和基于简历提问 🆕
-- ✅ 评分标准化
-- ✅ 性格生成器
-- ✅ LLM API连接
-- ✅ 综合面试流程
+- ✅ 领域配置加载（test_domain_loader.py）
+- ✅ 领域动态生成（test_domain_generator.py）
+- ✅ 知识盲区行为（test_blind_spot_behavior.py）
+- ✅ 知识盲区追问（test_blind_spot_followup.py）
+- ✅ 追问机制触发（test_followup.py）
+- ✅ 性格生成器（test_personality_generator.py）
+- ✅ 动态配置生成（test_dynamic_config.py）
+- ✅ LLM API连接（test_iflow_api.py）
+- ✅ 过度自信候选人（test_overconfident_improved.py）
 
 ---
 
@@ -627,16 +736,17 @@ python test/test_personality_generator.py   # 性格生成器测试
 
 ## 📊 项目统计
 
-- **代码行数**：~9000+ 行Python代码
-- **测试文件**：16个测试文件
-- **文档数量**：15个Markdown文档
-- **支持领域**：3个内置领域（可无限扩展）
+- **代码行数**：~12000+ 行Python代码
+- **测试文件**：17个测试文件（8个主测试 + 9个存档）
+- **文档数量**：24个Markdown文档
+- **支持领域**：4个内置领域（tech/marketing/healthcare/supply_chain_scm_saaS）
 - **候选人模板**：6个预设模板
-- **技能总数**：108个技能（跨3个领域）
-- **核心功能**：简历生成、智能追问、知识盲区检测、多维评分
+- **技能总数**：130个技能（跨4个领域）
+- **Streamlit页面**：3个交互式页面（控制台/历史记录/域配置）
+- **核心功能**：Web前端、简历生成、智能追问、知识盲区检测、多维评分
 
 ---
 
 **创建日期**：2025年11月  
-**最后更新**：2025年11月26日  
-**版本**：v3.0 (统一交互式架构)
+**最后更新**：2025年11月27日  
+**版本**：v3.1 (Web前端界面 + 真实场景应用规划)
