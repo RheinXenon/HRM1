@@ -184,44 +184,45 @@ def render_domain_selector():
 
 def render_basic_info_tab(config: Dict):
     """渲染基本信息Tab"""
-    st.markdown("### 📋 基本信息配置")
+    st.markdown("### 📋 领域基本信息")
     
-    col1, col2 = st.columns(2)
+    # 获取当前域ID作为key后缀（如果是新建则用timestamp）
+    domain_key = config.get('domain_id', '') or st.session_state.get('current_domain_id', 'new')
     
-    with col1:
-        domain_name = st.text_input(
-            "领域名称*",
-            value=config.get('domain_name', ''),
-            placeholder="例如: 金融科技",
-            key="domain_name"
+    # 领域名称
+    st.markdown("#### 基本信息")
+    domain_name = st.text_input(
+        "领域名称*",
+        value=config.get('domain_name', ''),
+        placeholder="例如: 金融科技",
+        key=f"domain_name_{domain_key}"
+    )
+    
+    # 自动生成domain_id
+    if domain_name:
+        suggested_id = generate_domain_id(domain_name)
+        domain_id = st.text_input(
+            "领域ID*",
+            value=config.get('domain_id', suggested_id),
+            placeholder="例如: fintech",
+            help="小写英文字母和下划线，自动从名称生成",
+            key=f"domain_id_{domain_key}"
         )
-        
-        # 自动生成domain_id
-        if domain_name:
-            suggested_id = generate_domain_id(domain_name)
-            domain_id = st.text_input(
-                "领域ID*",
-                value=config.get('domain_id', suggested_id),
-                placeholder="例如: fintech",
-                help="小写英文字母和下划线，自动从名称生成",
-                key="domain_id"
-            )
-        else:
-            domain_id = st.text_input(
-                "领域ID*",
-                value=config.get('domain_id', ''),
-                placeholder="例如: fintech",
-                key="domain_id"
-            )
-    
-    with col2:
-        description = st.text_area(
-            "领域描述*",
-            value=config.get('description', ''),
-            placeholder="详细描述该领域的特点和范围",
-            height=100,
-            key="description"
+    else:
+        domain_id = st.text_input(
+            "领域ID*",
+            value=config.get('domain_id', ''),
+            placeholder="例如: fintech",
+            key=f"domain_id_alt_{domain_key}"
         )
+    
+    description = st.text_area(
+        "领域描述*",
+        value=config.get('description', ''),
+        placeholder="详细描述该领域的特点和范围",
+        height=100,
+        key=f"description_{domain_key}"
+    )
     
     st.markdown("---")
     
@@ -233,7 +234,7 @@ def render_basic_info_tab(config: Dict):
         "输入行业（用逗号分隔）",
         value=industries_str,
         placeholder="互联网, 软件开发, 人工智能, 云计算",
-        key="industries"
+        key=f"industries_{domain_key}"
     )
     
     # 典型角色
@@ -244,7 +245,7 @@ def render_basic_info_tab(config: Dict):
         "输入角色（用逗号分隔）",
         value=roles_str,
         placeholder="软件工程师, 架构师, 产品经理",
-        key="roles"
+        key=f"roles_{domain_key}"
     )
     
     # 典型项目
@@ -256,7 +257,7 @@ def render_basic_info_tab(config: Dict):
         value=projects_str,
         placeholder="企业管理系统, 电商平台开发, 数据分析平台",
         height=80,
-        key="projects"
+        key=f"projects_{domain_key}"
     )
     
     # 典型成就
@@ -268,7 +269,7 @@ def render_basic_info_tab(config: Dict):
         value=achievements_str,
         placeholder="完成核心功能开发, 性能优化提升3倍, 主导系统架构设计",
         height=80,
-        key="achievements"
+        key=f"achievements_{domain_key}"
     )
     
     # 更新配置
@@ -351,6 +352,9 @@ def render_skills_tab(config: Dict):
     st.markdown("### 🧠 软技能")
     soft_skills = config.get('soft_skills', {})
     
+    # 获取当前域ID作为key后缀
+    domain_key = st.session_state.get('current_domain_id', 'new')
+    
     # 处理列表格式的soft_skills
     if isinstance(soft_skills, list):
         dict_soft_skills = {}
@@ -364,38 +368,87 @@ def render_skills_tab(config: Dict):
         soft_skills = dict_soft_skills
         config['soft_skills'] = soft_skills
     
+    # 添加新软技能
     with st.expander("➕ 添加软技能"):
         col1, col2 = st.columns(2)
         with col1:
-            new_soft_id = st.text_input("软技能ID", placeholder="communication", key="new_soft_id")
+            new_soft_id = st.text_input("软技能ID", placeholder="communication", key=f"new_soft_id_{domain_key}")
         with col2:
-            new_soft_name = st.text_input("软技能名称", placeholder="沟通能力", key="new_soft_name")
+            new_soft_name = st.text_input("软技能名称", placeholder="沟通能力", key=f"new_soft_name_{domain_key}")
         
-        if st.button("添加软技能"):
+        if st.button("添加软技能", key=f"add_soft_skill_{domain_key}"):
             if new_soft_id and new_soft_name:
                 soft_skills[new_soft_id] = new_soft_name
                 st.success(f"✅ 已添加软技能: {new_soft_name}")
                 st.rerun()
     
+    # 编辑现有软技能（采用卡片式显示，更直观）
     if soft_skills and isinstance(soft_skills, dict):
-        soft_skills_display = ", ".join([f"{k}: {v}" for k, v in soft_skills.items()])
-        soft_skills_input = st.text_area(
-            "软技能（格式: id: 名称, id2: 名称2）",
-            value=soft_skills_display,
-            height=100,
-            key="soft_skills_edit"
-        )
+        st.markdown("#### 已有软技能")
         
-        # 解析更新
-        try:
-            new_soft_skills = {}
-            for item in soft_skills_input.split(','):
-                if ':' in item:
-                    k, v = item.split(':', 1)
-                    new_soft_skills[k.strip()] = v.strip()
-            config['soft_skills'] = new_soft_skills
-        except:
-            pass
+        # 显示列标题
+        col1, col2, col3 = st.columns([2, 3, 1])
+        with col1:
+            st.markdown("**技能ID**")
+        with col2:
+            st.markdown("**技能名称**")
+        with col3:
+            st.markdown("**操作**")
+        
+        # 使用列表方式显示，每个软技能一行，可以编辑和删除
+        skills_to_delete = []
+        updated_soft_skills = {}
+        
+        for idx, (skill_id, skill_name) in enumerate(list(soft_skills.items())):
+            col1, col2, col3 = st.columns([2, 3, 1])
+            
+            with col1:
+                new_id = st.text_input(
+                    f"ID_{idx}", 
+                    value=skill_id, 
+                    key=f"soft_id_{skill_id}_{domain_key}",
+                    label_visibility="collapsed",
+                    placeholder="skill_id"
+                )
+            
+            with col2:
+                new_name = st.text_input(
+                    f"Name_{idx}", 
+                    value=skill_name, 
+                    key=f"soft_name_{skill_id}_{domain_key}",
+                    label_visibility="collapsed",
+                    placeholder="软技能名称"
+                )
+            
+            with col3:
+                st.markdown("<div style='margin-top: 0px;'></div>", unsafe_allow_html=True)
+                if st.button("🗑️", key=f"del_soft_{skill_id}_{domain_key}", help="删除此软技能"):
+                    skills_to_delete.append(skill_id)
+                    continue
+            
+            # 如果ID改变了，需要特殊处理
+            if new_id != skill_id:
+                updated_soft_skills[new_id] = new_name
+                skills_to_delete.append(skill_id)
+            else:
+                updated_soft_skills[skill_id] = new_name
+        
+        # 应用删除和更新
+        for skill_id in skills_to_delete:
+            if skill_id in soft_skills and skill_id not in updated_soft_skills:
+                pass  # 真正的删除
+            else:
+                pass  # ID改变导致的"删除"
+        
+        # 合并更新
+        soft_skills.clear()
+        soft_skills.update(updated_soft_skills)
+        config['soft_skills'] = soft_skills
+        
+        if skills_to_delete:
+            st.rerun()
+    else:
+        st.info("暂无软技能，点击上方➕添加")
     
     config['skill_categories'] = skill_categories
 
@@ -403,6 +456,9 @@ def render_skills_tab(config: Dict):
 def render_questions_tab(config: Dict):
     """渲染问题模板Tab"""
     st.markdown("### ❓ 问题模板配置")
+    
+    # 获取当前域ID作为key后缀
+    domain_key = st.session_state.get('current_domain_id', 'new')
     
     templates_by_level = config.get('templates_by_skill_level', {})
     
@@ -422,7 +478,7 @@ def render_questions_tab(config: Dict):
         value=basic_str,
         height=120,
         placeholder="请介绍一下你对{skill}的理解\n你在项目中如何使用{skill}的？",
-        key="basic_questions"
+        key=f"basic_questions_{domain_key}"
     )
     templates_by_level['basic'] = {
         "description": "基础级别问题",
@@ -443,7 +499,7 @@ def render_questions_tab(config: Dict):
         "中级问题模板（每行一个）",
         value=inter_str,
         height=120,
-        key="inter_questions"
+        key=f"inter_questions_{domain_key}"
     )
     templates_by_level['intermediate'] = {
         "description": "中级问题",
@@ -464,7 +520,7 @@ def render_questions_tab(config: Dict):
         "高级问题模板（每行一个）",
         value=adv_str,
         height=120,
-        key="adv_questions"
+        key=f"adv_questions_{domain_key}"
     )
     templates_by_level['advanced'] = {
         "description": "高级问题",
@@ -475,14 +531,114 @@ def render_questions_tab(config: Dict):
     
     st.markdown("---")
     
-    # 追问模板（简化显示）
+    # 追问模板
     st.markdown("#### 追问模板")
-    st.info("追问模板包括：深入追问、挑战弱点、验证经验等类别。可在JSON编辑模式下详细配置。")
+    st.info("💡 追问模板用于面试官深入考察候选人的真实能力，包括三大类别")
+    
+    followup_templates = config.get('followup_templates', {})
+    
+    # 深入追问
+    with st.expander("🔍 深入追问 (probe_depth)", expanded=False):
+        st.caption("测试候选人对概念的真实理解深度")
+        probe_data = followup_templates.get('probe_depth', {})
+        if isinstance(probe_data, list):
+            probe_patterns = probe_data
+        elif isinstance(probe_data, dict):
+            probe_patterns = probe_data.get('patterns', [])
+        else:
+            probe_patterns = []
+        probe_str = "\n".join(probe_patterns) if isinstance(probe_patterns, list) else ""
+        probe_input = st.text_area(
+            "深入追问模板（每行一个）",
+            value=probe_str,
+            height=100,
+            placeholder="能具体说说{mentioned_concept}的工作原理吗？\n你提到了{term}，能展开讲讲吗？",
+            key=f"probe_followup_{domain_key}"
+        )
+        followup_templates['probe_depth'] = {
+            "description": "深入追问，测试真实理解深度",
+            "patterns": [line.strip() for line in probe_input.split('\n') if line.strip()]
+        }
+    
+    # 挑战弱点
+    with st.expander("⚡ 挑战弱点 (challenge_weakness)", expanded=False):
+        st.caption("针对模糊或不确定的回答进行挑战")
+        challenge_data = followup_templates.get('challenge_weakness', {})
+        if isinstance(challenge_data, list):
+            challenge_patterns = challenge_data
+        elif isinstance(challenge_data, dict):
+            challenge_patterns = challenge_data.get('patterns', [])
+        else:
+            challenge_patterns = []
+        challenge_str = "\n".join(challenge_patterns) if isinstance(challenge_patterns, list) else ""
+        challenge_input = st.text_area(
+            "挑战弱点模板（每行一个）",
+            value=challenge_str,
+            height=100,
+            placeholder="你刚才说{vague_statement}，能具体解释一下吗？\n这个{concept}的关键细节是什么？",
+            key=f"challenge_followup_{domain_key}"
+        )
+        followup_templates['challenge_weakness'] = {
+            "description": "针对模糊回答进行挑战",
+            "patterns": [line.strip() for line in challenge_input.split('\n') if line.strip()]
+        }
+    
+    # 验证经验
+    with st.expander("✅ 验证经验 (verify_experience)", expanded=False):
+        st.caption("验证候选人是否有真实的实践经验")
+        verify_data = followup_templates.get('verify_experience', {})
+        if isinstance(verify_data, list):
+            verify_patterns = verify_data
+        elif isinstance(verify_data, dict):
+            verify_patterns = verify_data.get('patterns', [])
+        else:
+            verify_patterns = []
+        verify_str = "\n".join(verify_patterns) if isinstance(verify_patterns, list) else ""
+        verify_input = st.text_area(
+            "验证经验模板（每行一个）",
+            value=verify_str,
+            height=100,
+            placeholder="你在项目中具体是怎么配置{technology}的？\n遇到{problem}时，排查的步骤是什么？",
+            key=f"verify_followup_{domain_key}"
+        )
+        followup_templates['verify_experience'] = {
+            "description": "验证实际经验",
+            "patterns": [line.strip() for line in verify_input.split('\n') if line.strip()]
+        }
+    
+    config['followup_templates'] = followup_templates
+    
+    st.markdown("---")
+    
+    # 场景化问题
+    st.markdown("#### 场景化问题")
+    scenario_questions = config.get('scenario_questions', {})
+    if isinstance(scenario_questions, list):
+        scenario_patterns = scenario_questions
+    elif isinstance(scenario_questions, dict):
+        scenario_patterns = scenario_questions.get('patterns', [])
+    else:
+        scenario_patterns = []
+    scenario_str = "\n".join(scenario_patterns) if isinstance(scenario_patterns, list) else ""
+    scenario_input = st.text_area(
+        "场景化问题模板（每行一个）",
+        value=scenario_str,
+        height=100,
+        placeholder="如果系统出现{problem}，你会如何排查和解决？\n假设需要支持{requirement}，你会如何设计？",
+        key=f"scenario_questions_{domain_key}"
+    )
+    config['scenario_questions'] = {
+        "description": "场景化问题模板",
+        "patterns": [line.strip() for line in scenario_input.split('\n') if line.strip()]
+    }
 
 
 def render_signals_tab(config: Dict):
     """渲染评估信号Tab"""
     st.markdown("### 🔍 评估信号词配置")
+    
+    # 获取当前域ID作为key后缀
+    domain_key = st.session_state.get('current_domain_id', 'new')
     
     # 辅助函数：安全获取terms
     def safe_get_terms(data):
@@ -501,7 +657,7 @@ def render_signals_tab(config: Dict):
         "高级术语（逗号分隔）",
         value=high_str,
         placeholder="微服务, 分布式, 高并发, 架构",
-        key="high_terms"
+        key=f"high_terms_{domain_key}"
     )
     config['high_level_terms'] = {
         "description": "高级专业术语",
@@ -520,7 +676,7 @@ def render_signals_tab(config: Dict):
         "技术指标（逗号分隔）",
         value=tech_str,
         placeholder="QPS, TPS, 延迟, 吞吐量",
-        key="tech_metrics"
+        key=f"tech_metrics_{domain_key}"
     )
     config['technical_metrics'] = {
         "description": "技术指标",
@@ -536,7 +692,7 @@ def render_signals_tab(config: Dict):
         "证据词汇（逗号分隔）",
         value=evidence_str,
         placeholder="例如, 比如, 具体来说, 代码, 实现",
-        key="evidence_terms"
+        key=f"evidence_terms_{domain_key}"
     )
     config['concrete_evidence'] = {
         "description": "具体证据类词汇",
@@ -554,7 +710,7 @@ def render_signals_tab(config: Dict):
         "模糊词汇（逗号分隔）",
         value=vague_str,
         placeholder="大概, 应该, 可能, 好像",
-        key="vague_terms"
+        key=f"vague_terms_{domain_key}"
     )
     config['vague_words'] = {
         "description": "模糊词汇",
@@ -570,7 +726,7 @@ def render_signals_tab(config: Dict):
         "露怯关键词（逗号分隔）",
         value=weakness_str,
         placeholder="不太了解, 记不清, 不太确定",
-        key="weakness_terms"
+        key=f"weakness_terms_{domain_key}"
     )
     config['weakness_indicators'] = {
         "description": "露怯关键词",
@@ -586,7 +742,7 @@ def render_signals_tab(config: Dict):
         "空话套话（逗号分隔）",
         value=empty_str,
         placeholder="我觉得, 我认为, 非常重要",
-        key="empty_terms"
+        key=f"empty_terms_{domain_key}"
     )
     config['empty_phrases'] = {
         "description": "空话套话",

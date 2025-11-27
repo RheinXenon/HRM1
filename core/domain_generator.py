@@ -48,9 +48,12 @@ class DomainConfigGenerator:
    - skill_descriptions: 关键技能的详细描述字典
 
 3. question_templates: 问题模板
-   - templates_by_skill_level: 按技能等级分类（basic, intermediate, advanced）
-   - followup_templates: 追问模板（probe_depth, challenge_weakness, verify_experience）
-   - scenario_questions: 场景化问题模板
+   - templates_by_skill_level: 按技能等级分类（basic, intermediate, advanced），每个级别包含description和patterns
+   - followup_templates: 追问模板，必须包含以下三个类别：
+     * probe_depth: 深入追问，测试真实理解深度（5-8个模板）
+     * challenge_weakness: 针对模糊回答进行挑战（5-8个模板）
+     * verify_experience: 验证实际经验（5-8个模板）
+   - scenario_questions: 场景化问题模板（5-8个）
 
 4. assessment_signals: 评估信号词
    - high_level_terms: 高级专业术语（15-30个）
@@ -81,7 +84,19 @@ class DomainConfigGenerator:
       "teamwork": "团队协作"
     }
   },
-  "question_templates": {...},
+  "question_templates": {
+    "templates_by_skill_level": {
+      "basic": {"description": "基础级别问题", "patterns": ["问题1", "问题2"]},
+      "intermediate": {"description": "中级问题", "patterns": ["问题1", "问题2"]},
+      "advanced": {"description": "高级问题", "patterns": ["问题1", "问题2"]}
+    },
+    "followup_templates": {
+      "probe_depth": {"description": "深入追问", "patterns": ["追问1", "追问2"]},
+      "challenge_weakness": {"description": "挑战弱点", "patterns": ["挑战1", "挑战2"]},
+      "verify_experience": {"description": "验证经验", "patterns": ["验证1", "验证2"]}
+    },
+    "scenario_questions": {"description": "场景化问题", "patterns": ["场景1", "场景2"]}
+  },
   "assessment_signals": {...}
 }
 
@@ -278,8 +293,28 @@ class DomainConfigGenerator:
                     },
                     "followup_templates": {
                         "probe_depth": {
-                            "description": "深入追问",
-                            "patterns": ["能具体说说{mentioned_concept}的工作原理吗？"]
+                            "description": "深入追问，测试真实理解深度",
+                            "patterns": [
+                                "能具体说说{mentioned_concept}的工作原理吗？",
+                                "你提到了{term}，能展开讲讲吗？",
+                                "为什么选择{approach}而不是其他方案？"
+                            ]
+                        },
+                        "challenge_weakness": {
+                            "description": "针对模糊回答进行挑战",
+                            "patterns": [
+                                "你刚才说{vague_statement}，能具体解释一下吗？",
+                                "这个{concept}的关键细节是什么？",
+                                "能举个具体的例子说明吗？"
+                            ]
+                        },
+                        "verify_experience": {
+                            "description": "验证实际经验",
+                            "patterns": [
+                                "你在项目中具体是怎么做的？",
+                                "遇到{problem}时，排查的步骤是什么？",
+                                "能说说具体的指标或数据吗？"
+                            ]
                         }
                     },
                     "scenario_questions": {

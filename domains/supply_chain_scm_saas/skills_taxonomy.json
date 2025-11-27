@@ -1,0 +1,108 @@
+{
+  "skill_categories": {
+    "supply_chain_domain": {
+      "name": "供应链领域知识",
+      "skills": [
+        "采购管理",
+        "库存控制",
+        "物流与配送",
+        "需求计划",
+        "供应商关系管理",
+        "供应链风险管理",
+        "精益生产",
+        "JIT/VMI模式",
+        "MRP/ERP逻辑",
+        "全球贸易合规"
+      ],
+      "description": "对制造业供应链各环节的业务流程、关键指标、行业痛点及最佳实践的深入理解"
+    },
+    "manufacturing_operations": {
+      "name": "制造业运营知识",
+      "skills": [
+        "BOM管理",
+        "工艺路线",
+        "产能规划",
+        "齐套分析",
+        "车间调度",
+        "质量追溯",
+        "设备维护计划",
+        "工单管理"
+      ],
+      "description": "熟悉离散制造或流程制造的生产运作逻辑，理解供应链与生产计划的联动机制"
+    },
+    "saas_product_tech": {
+      "name": "SaaS产品与技术能力",
+      "skills": [
+        "多租户架构",
+        "API集成设计",
+        "工作流引擎",
+        "低代码配置平台",
+        "数据建模",
+        "微服务架构",
+        "云原生部署",
+        "权限与数据隔离"
+      ],
+      "description": "掌握SaaS产品的通用技术架构、可配置性设计及企业级集成能力"
+    },
+    "data_analytics_ai": {
+      "name": "数据分析与AI应用",
+      "skills": [
+        "时间序列预测",
+        "库存优化算法",
+        "网络优化",
+        "异常检测",
+        "KPI仪表盘设计",
+        "ETL流程",
+        "主数据管理",
+        "数字孪生"
+      ],
+      "description": "运用数据科学方法解决供应链中的预测、优化与决策问题"
+    },
+    "enterprise_integration": {
+      "name": "企业系统集成",
+      "skills": [
+        "SAP/Oracle集成",
+        "MES对接",
+        "WMS/TMS对接",
+        "EDI/API对接",
+        "IDoc/BAPI使用",
+        "中间件配置",
+        "数据映射与转换",
+        "接口监控与治理"
+      ],
+      "description": "具备与制造业主流IT系统（ERP、MES、WMS等）进行深度集成的经验"
+    },
+    "consulting_implementation": {
+      "name": "咨询与实施方法论",
+      "skills": [
+        "AS-IS/TO-BE分析",
+        "蓝图设计",
+        "UAT测试",
+        "变革管理",
+        "用户培训",
+        "上线切换",
+        "ROI测算",
+        "项目风险管理"
+      ],
+      "description": "掌握从需求调研到系统上线的完整项目交付流程与客户管理技巧"
+    }
+  },
+  "soft_skills": {
+    "cross_functional_communication": "跨职能沟通能力",
+    "client_stakeholder_management": "客户干系人管理",
+    "business_translation": "业务语言与技术语言互译能力",
+    "problem_solving_under_pressure": "高压下解决问题能力",
+    "industry_empathy": "对制造业客户的同理心",
+    "presentation_skills": "专业演示与汇报能力",
+    "active_listening": "主动倾听与需求挖掘",
+    "adaptability_to_factory_environment": "适应工厂现场环境的能力"
+  },
+  "skill_descriptions": {
+    "需求计划": "基于历史销售、市场趋势、促销活动等多维度数据，制定准确的物料与产能需求计划，支撑MRP运行",
+    "库存优化": "通过安全库存模型、ABC分类、周转率分析等手段，在服务水平与库存成本间取得平衡",
+    "多租户架构": "支持多个客户共享同一套SaaS应用但数据完全隔离的技术架构，是SCM SaaS的核心基础",
+    "齐套分析": "检查生产所需的所有物料是否齐备，避免因缺料导致产线停摆，是制造业供应链的关键控制点",
+    "VMI模式": "供应商根据客户库存与消耗数据主动补货，需SaaS平台提供透明数据共享与协同机制",
+    "供应链数字孪生": "构建物理供应链的虚拟映射，用于仿真、预测与优化决策"
+  }
+}
