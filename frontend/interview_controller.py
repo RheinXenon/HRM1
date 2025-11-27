@@ -43,7 +43,9 @@ class InterviewController:
         domain_id: str,
         candidate_configs: List[Dict],
         mode: str = "full",
-        callback: Optional[Callable] = None
+        callback: Optional[Callable] = None,
+        enable_memory: bool = True,
+        enable_reflection: bool = True
     ):
         """
         启动面试
@@ -53,6 +55,8 @@ class InterviewController:
             candidate_configs: 候选人配置列表
             mode: 面试模式 (demo/full)
             callback: 回调函数，用于更新UI
+            enable_memory: 是否启用记忆系统
+            enable_reflection: 是否启用反思机制
         """
         if self.is_running:
             self.message_queue.put({
@@ -69,7 +73,7 @@ class InterviewController:
         # 创建面试线程
         self.interview_thread = threading.Thread(
             target=self._run_interview_thread,
-            args=(domain_id, candidate_configs, mode, callback),
+            args=(domain_id, candidate_configs, mode, callback, enable_memory, enable_reflection),
             daemon=True
         )
         self.interview_thread.start()
@@ -116,7 +120,9 @@ class InterviewController:
         domain_id: str,
         candidate_configs: List[Dict],
         mode: str,
-        callback: Optional[Callable]
+        callback: Optional[Callable],
+        enable_memory: bool = True,
+        enable_reflection: bool = True
     ):
         """在独立线程中运行面试"""
         try:
@@ -155,8 +161,11 @@ class InterviewController:
                     "content": f"🚀 开始第 {idx}/{total_candidates} 个面试 (领域: {domain_id})"
                 })
                 
-                # 创建面试引擎
-                self.engine = InterviewEngine()
+                # 创建面试引擎（启用记忆和反思）
+                self.engine = InterviewEngine(
+                    enable_memory=enable_memory,
+                    enable_reflection=enable_reflection
+                )
                 
                 # 发送候选人信息
                 profile = candidate_config.get("profile", candidate_config)
@@ -360,6 +369,16 @@ class InterviewController:
             score_interpretation = evaluation.get("score_interpretation", {})
             recommendation = score_interpretation.get("recommendation", "观察")
             
+            # 将评估结果添加到对话日志（供记忆系统使用）
+            evaluation_summary = f"标准化评分: {normalized_score:.1f}/100, 建议: {recommendation}"
+            if evaluation.get("feedback"):
+                evaluation_summary += f", 反馈: {evaluation.get('feedback')}"
+            
+            conversation_log.append({
+                "role": "system",
+                "content": evaluation_summary
+            })
+            
             self.message_queue.put({
                 "type": "evaluation",
                 "content": {
@@ -396,6 +415,14 @@ class InterviewController:
                     "is_followup": True
                 })
                 
+                # 添加追问问题到对话日志（标记为追问）
+                conversation_log.append({
+                    "role": "interviewer",
+                    "content": followup_question,
+                    "type": "followup",
+                    "category": question.category
+                })
+                
                 # 等待暂停
                 self._wait_if_paused()
                 if self.stop_flag.is_set():
@@ -412,6 +439,12 @@ class InterviewController:
                 )
                 self._send_message("candidate", followup_answer)
                 
+                # 添加追问回答到对话日志
+                conversation_log.append({
+                    "role": "candidate",
+                    "content": followup_answer
+                })
+                
                 # 评估追问回答
                 followup_evaluation = interviewer.evaluate_answer(
                     question=followup_question,
@@ -421,6 +454,22 @@ class InterviewController:
                 
                 followup_score = followup_evaluation.get("normalized_score", 50.0)
                 followup_interp = followup_evaluation.get("score_interpretation", {})
+                
+                # 构建追问评估摘要（包含关键词）
+                followup_eval_summary = f"追问评分: {followup_score:.1f}/100"
+                if followup_score < normalized_score - 10:
+                    followup_eval_summary += ", 🚩 追问后露怯"
+                elif followup_score >= normalized_score:
+                    followup_eval_summary += ", 追问后依然扎实"
+                
+                if followup_evaluation.get("feedback"):
+                    followup_eval_summary += f", {followup_evaluation.get('feedback')}"
+                
+                # 添加追问评估到对话日志
+                conversation_log.append({
+                    "role": "system",
+                    "content": followup_eval_summary
+                })
                 
                 self.message_queue.put({
                     "type": "evaluation",
@@ -442,11 +491,19 @@ class InterviewController:
         # 候选人提问环节
         interviewer_prompt = "非常好，你还有什么问题要问我吗？"
         self._send_message("interviewer", interviewer_prompt)
+        conversation_log.append({
+            "role": "interviewer",
+            "content": interviewer_prompt
+        })
         
         self._wait_if_paused()
         
         candidate_questions = candidate.ask_question_to_interviewer()
         self._send_message("candidate", candidate_questions)
+        conversation_log.append({
+            "role": "candidate",
+            "content": candidate_questions
+        })
         
         # 生成最终报告
         self.message_queue.put({
@@ -475,6 +532,58 @@ class InterviewController:
         
         self.engine._save_interview_record(result, resume_data=resume_data)
         self.current_interview = result
+        
+        # Phase 2: 保存记忆和反思（每个候选人面试结束后）
+        duration = (end_time - start_time).total_seconds()
+        interview_data = {
+            "interview_id": interview_id,
+            "candidate_name": candidate_profile.name,
+            "job_title": job_config.get("title", ""),
+            "conversation_log": conversation_log,
+            "evaluation": final_report,
+            "recommendation_score": final_report.get("recommendation_score", 0),
+            "duration_seconds": duration
+        }
+        
+        # 提取情节记忆
+        if self.engine.memory_system:
+            self.message_queue.put({
+                "type": "system",
+                "content": "📚 正在保存面试记忆..."
+            })
+            episodes = self.engine.memory_system.extract_episodes_from_interview(interview_data)
+            for episode in episodes:
+                self.engine.memory_system.add_episodic_memory(episode)
+            
+            # 更新语义记忆
+            self.engine.memory_system.update_semantic_from_episodes()
+            
+            # 保存记忆
+            self.engine.memory_system.save_memories()
+            
+            # 清空短期记忆
+            self.engine.memory_system.clear_working_memory()
+            
+            self.message_queue.put({
+                "type": "system",
+                "content": f"✅ 已保存 {len(episodes)} 个情节记忆"
+            })
+        
+        # 触发即时反思
+        if self.engine.reflection_system:
+            self.message_queue.put({
+                "type": "system",
+                "content": "🤔 正在进行面试反思..."
+            })
+            reflection = self.engine.reflection_system.immediate_reflection(interview_data)
+            
+            # 保存反思数据
+            self.engine.reflection_system.save_all()
+            
+            self.message_queue.put({
+                "type": "system",
+                "content": f"✅ 反思完成: {len(reflection.findings)} 项发现, {len(reflection.improvement_suggestions)} 条建议"
+            })
         
         # 发送最终报告
         self.message_queue.put({

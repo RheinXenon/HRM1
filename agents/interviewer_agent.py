@@ -18,6 +18,7 @@ from agents.prompts.interviewer_prompts import (
 from agents.prompts.resume_prompts import RESUME_BASED_QUESTION_PROMPT
 from core.score_normalizer import ScoreNormalizer
 from domains import DomainLoader
+from core.memory_system import MemorySystem, EpisodicMemory
 
 
 @dataclass
@@ -32,7 +33,7 @@ class InterviewQuestion:
 class InterviewerAgent:
     """面试官Agent类"""
     
-    def __init__(self, llm_client, job_config: Dict, company_config: Dict, domain_id: str = "tech", resume_data: Dict = None):
+    def __init__(self, llm_client, job_config: Dict, company_config: Dict, domain_id: str = "tech", resume_data: Dict = None, memory_system: MemorySystem = None):
         """
         初始化面试官Agent
 
@@ -42,6 +43,7 @@ class InterviewerAgent:
             company_config: 公司信息配置
             domain_id: 领域ID（tech/marketing/healthcare等），默认为tech
             resume_data: 候选人简历数据（可选）
+            memory_system: 记忆系统实例（可选）
         """
         self.llm_client = llm_client
         self.job_config = job_config
@@ -56,6 +58,9 @@ class InterviewerAgent:
         # 加载领域配置（使用单例模式，避免重复加载）
         self.domain = DomainLoader.get_instance(domain_id)
         
+        # Phase 2: 记忆系统集成
+        self.memory_system = memory_system
+        
     def generate_interview_script(self, candidate_level: str = "senior") -> List[InterviewQuestion]:
         """
         生成面试脚本（问题列表）
@@ -67,6 +72,16 @@ class InterviewerAgent:
             面试问题列表
         """
         logger.info(f"正在生成{candidate_level}级别的面试问题...")
+        
+        # Phase 2: 检索相关的历史经验（如果有记忆系统）
+        if self.memory_system:
+            similar_interviews = self.memory_system.retrieve_episodic_memories(
+                skill_area="专业能力",
+                only_successful=True,
+                limit=3
+            )
+            if similar_interviews:
+                logger.info(f"💭 检索到 {len(similar_interviews)} 个相关历史面试案例")
         
         questions = []
         

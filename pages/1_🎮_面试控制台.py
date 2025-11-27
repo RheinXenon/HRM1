@@ -230,6 +230,29 @@ def main():
             value=1,
             help="设置一次自动执行多少个面试"
         )
+        
+        st.markdown("---")
+        
+        # Phase 2: Agent增强功能
+        st.subheader("🧠 Agent增强功能")
+        
+        col_mem, col_ref = st.columns(2)
+        with col_mem:
+            enable_memory = st.checkbox(
+                "💭 启用记忆系统",
+                value=True,
+                help="Agent会记住历史面试经验并在新面试中应用"
+            )
+        
+        with col_ref:
+            enable_reflection = st.checkbox(
+                "🤔 启用反思机制",
+                value=True,
+                help="面试后自动进行反思分析，生成改进建议"
+            )
+        
+        if enable_memory or enable_reflection:
+            st.info("💡 启用后可在「记忆与反思」页面查看详细信息")
     
     # 主区域 - 分两栏
     col_control, col_display = st.columns([1, 2])
@@ -274,11 +297,13 @@ def main():
                 company_config, job_config = generate_domain_config(domain_id)
                 st.session_state.job_title = job_config.get('job_title', '未知职位')
                 
-                # 启动面试（传入配置列表）
+                # 启动面试（传入配置列表和Agent增强选项）
                 st.session_state.controller.start_interview(
                     domain_id=domain_id,
                     candidate_configs=candidate_configs,
-                    mode=mode
+                    mode=mode,
+                    enable_memory=enable_memory,
+                    enable_reflection=enable_reflection
                 )
                 st.session_state.interview_running = True
                 st.rerun()

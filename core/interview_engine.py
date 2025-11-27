@@ -16,6 +16,8 @@ from agents.candidate_agent import CandidateAgent, CandidateProfile
 from agents.interviewer_agent import InterviewerAgent, InterviewQuestion
 from config import load_job_config, load_company_config
 from core.resume_generator import ResumeGenerator
+from core.memory_system import MemorySystem
+from core.reflection_system import ReflectionSystem
 
 
 @dataclass
@@ -35,14 +37,25 @@ class InterviewResult:
 class InterviewEngine:
     """面试引擎类"""
     
-    def __init__(self, llm_client=None):
+    def __init__(self, llm_client=None, enable_memory=True, enable_reflection=True):
         """
         初始化面试引擎
         
         Args:
             llm_client: LLM客户端实例，如果为None则自动创建
+            enable_memory: 是否启用记忆系统
+            enable_reflection: 是否启用反思机制
         """
         self.llm_client = llm_client or self._create_llm_client()
+        
+        # Phase 2: 初始化记忆系统和反思机制
+        self.memory_system = MemorySystem() if enable_memory else None
+        self.reflection_system = ReflectionSystem(self.llm_client) if enable_reflection else None
+        
+        if self.memory_system:
+            logger.info("💭 记忆系统已启用")
+        if self.reflection_system:
+            logger.info("🤔 反思机制已启用")
         
     def _create_llm_client(self):
         """创建LLM客户端"""
@@ -128,13 +141,26 @@ class InterviewEngine:
         # 4. 初始化Agents
         logger.info("🤖 步骤4: 初始化面试官和候选人Agent...")
         
-        # 创建面试官Agent（传入简历数据）
+        # Phase 2: 创建短期记忆
+        if self.memory_system:
+            self.memory_system.create_working_memory(
+                session_id=interview_id,
+                candidate_profile={
+                    "name": candidate_profile.name,
+                    "skills": candidate_profile.skills,
+                    "level": profile_data.get("experience", {}).get("level", "senior")
+                }
+            )
+            logger.info(f"🧠 短期记忆已创建: {interview_id}")
+        
+        # 创建面试官Agent（传入简历数据和记忆系统）
         interviewer = InterviewerAgent(
             llm_client=self.llm_client,
             job_config=job_config,
             company_config=company_config,
             domain_id=domain_id,
-            resume_data=resume_data
+            resume_data=resume_data,
+            memory_system=self.memory_system
         )
         
         # 创建候选人Agent
@@ -393,6 +419,47 @@ class InterviewEngine:
         
         # 12. 保存记录（包含简历数据）
         self._save_interview_record(result, resume_data=resume_data)
+        
+        # Phase 2: 面试后记忆和反思处理
+        interview_data = {
+            "interview_id": interview_id,
+            "candidate_name": candidate_profile.name,
+            "job_title": job_config.get("title", ""),
+            "conversation_log": conversation_log,
+            "evaluation": final_report,
+            "recommendation_score": final_report.get("recommendation_score", 0),
+            "duration_seconds": duration
+        }
+        
+        # 13. 提取情节记忆
+        if self.memory_system:
+            logger.info("\n📚 步骤10: 提取面试经验到记忆系统...")
+            episodes = self.memory_system.extract_episodes_from_interview(interview_data)
+            for episode in episodes:
+                self.memory_system.add_episodic_memory(episode)
+            
+            # 更新语义记忆
+            self.memory_system.update_semantic_from_episodes()
+            
+            # 保存记忆
+            self.memory_system.save_memories()
+            
+            # 清空短期记忆
+            self.memory_system.clear_working_memory()
+            logger.success(f"✅ 提取 {len(episodes)} 个情节记忆")
+        
+        # 14. 触发即时反思
+        if self.reflection_system:
+            logger.info("\n🤔 步骤11: 进行面试后反思...")
+            reflection = self.reflection_system.immediate_reflection(interview_data)
+            
+            # 生成并打印反思报告
+            reflection_report = self.reflection_system.generate_reflection_report(reflection)
+            print("\n" + reflection_report)
+            
+            # 保存反思数据
+            self.reflection_system.save_all()
+            logger.success("✅ 即时反思完成")
         
         # 输出结果
         print("\n" + "="*60)
