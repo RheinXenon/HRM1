@@ -125,16 +125,53 @@ def render_ai_generation_section():
             if not business_desc or len(business_desc.strip()) < 20:
                 st.error("请输入至少20字的业务描述")
             else:
-                with st.spinner("🤖 AI正在生成配置，请稍候..."):
+                # 使用status容器显示生成进度
+                with st.status("🤖 AI正在生成配置（预计需要1-2分钟）...", expanded=True) as status:
                     try:
                         generator = DomainConfigGenerator()
-                        configs = generator.generate_from_description(business_desc)
+                        
+                        # 步骤1
+                        st.write("📋 **步骤1/3**: 生成基础信息和技能体系...")
+                        st.caption("正在分析业务特点，生成领域配置和技能分类...")
+                        step1_result = generator._generate_domain_and_skills(business_desc)
+                        st.success("✅ 步骤1完成 - 已生成领域基础信息和技能体系")
+                        
+                        # 步骤2
+                        st.write("❓ **步骤2/3**: 生成问题模板...")
+                        st.caption("基于技能体系，生成面试问题模板（含占位符）...")
+                        step2_result = generator._generate_question_templates(
+                            business_desc,
+                            step1_result['domain_config'],
+                            step1_result['skills_taxonomy']
+                        )
+                        st.success("✅ 步骤2完成 - 已生成问题模板和追问模板")
+                        
+                        # 步骤3
+                        st.write("🔍 **步骤3/3**: 生成评估信号词...")
+                        st.caption("生成用于评估候选人回答质量的关键信号词...")
+                        step3_result = generator._generate_assessment_signals(
+                            business_desc,
+                            step1_result['domain_config']
+                        )
+                        st.success("✅ 步骤3完成 - 已生成评估信号词")
+                        
+                        # 合并结果
+                        configs = {
+                            'domain_config': step1_result['domain_config'],
+                            'skills_taxonomy': step1_result['skills_taxonomy'],
+                            'question_templates': step2_result,
+                            'assessment_signals': step3_result
+                        }
+                        
                         st.session_state.domain_configs = configs
                         st.session_state.current_domain_id = configs['domain_config'].get('domain_id', 'new_domain')
                         st.session_state.is_editing_existing = False
+                        
+                        status.update(label="✅ AI生成完成！", state="complete", expanded=False)
                         st.success("✅ AI生成完成！请在下方编辑和保存配置")
                         st.rerun()
                     except Exception as e:
+                        status.update(label="❌ 生成失败", state="error", expanded=True)
                         st.error(f"❌ 生成失败: {str(e)}")
     
     with col_btn2:
