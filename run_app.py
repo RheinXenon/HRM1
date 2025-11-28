@@ -27,7 +27,7 @@ def find_free_port(start_port=8501, max_attempts=10):
 def main():
     """启动应用"""
     print("=" * 60)
-    print("🎯 HRM1 智能面试系统")
+    print("🎯 HR 智能面试系统 M1A7")
     print("=" * 60)
     print()
     
