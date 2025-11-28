@@ -169,6 +169,8 @@ if 'questions' not in st.session_state:
     st.session_state.questions = []
 if 'current_question_index' not in st.session_state:
     st.session_state.current_question_index = 0
+if 'is_in_followup' not in st.session_state:
+    st.session_state.is_in_followup = False  # 是否处于追问状态
 if 'final_report' not in st.session_state:
     st.session_state.final_report = None
 if 'video_recording' not in st.session_state:
@@ -191,6 +193,10 @@ if 'all_evaluations' not in st.session_state:
     st.session_state.all_evaluations = []
 if 'current_answer_text' not in st.session_state:
     st.session_state.current_answer_text = ""
+if 'pending_voice_text' not in st.session_state:
+    st.session_state.pending_voice_text = None  # 待追加的语音文本
+if 'should_clear_input' not in st.session_state:
+    st.session_state.should_clear_input = False  # 是否需要清空输入框
 if 'is_recording' not in st.session_state:
     st.session_state.is_recording = False
 if 'recording_thread' not in st.session_state:
@@ -375,12 +381,14 @@ def initialize_interview(domain_id: str, resume_data: Dict, enable_memory: bool 
 
 def ask_next_question():
     """提出下一个问题"""
-    if st.session_state.current_question_index >= len(st.session_state.questions):
+    question_index = int(st.session_state.current_question_index)  # 确保是整数
+    
+    if question_index >= len(st.session_state.questions):
         # 所有问题已完成，生成最终报告
         generate_final_report()
         return
     
-    question = st.session_state.questions[st.session_state.current_question_index]
+    question = st.session_state.questions[question_index]
     question_text = st.session_state.interviewer.ask_question(question)
     
     st.session_state.messages.append({
@@ -411,7 +419,9 @@ def process_user_answer(answer: str):
     })
     
     # 获取当前问题
-    current_question = st.session_state.questions[st.session_state.current_question_index]
+    # 如果是追问状态，索引不变；否则使用当前索引
+    question_index = int(st.session_state.current_question_index)  # 确保是整数
+    current_question = st.session_state.questions[question_index]
     
     # 评估回答
     with st.spinner("正在评估您的回答..."):
@@ -443,8 +453,8 @@ def process_user_answer(answer: str):
     confidence_level = evaluation.get("confidence_level", "genuine")
     need_followup = evaluation.get("need_follow_up", "no").lower() == "yes"
     
-    # 简化追问逻辑：只有在明确需要时才追问
-    if need_followup and confidence_level == "overconfident":
+    # 简化追问逻辑：只有在明确需要且不在追问状态时才追问
+    if need_followup and confidence_level == "overconfident" and not st.session_state.is_in_followup:
         # 生成追问
         followup_skill = current_question.expected_skills[0] if current_question.expected_skills else "细节"
         followup_question = st.session_state.interviewer.generate_followup_question(
@@ -462,10 +472,11 @@ def process_user_answer(answer: str):
             }
         })
         
-        # 标记为追问状态，等待用户回答
-        st.session_state.current_question_index -= 0.5  # 使用小数标记追问状态
+        # 标记为追问状态，但索引不变
+        st.session_state.is_in_followup = True
     else:
-        # 进入下一个问题
+        # 如果是追问后的回答，或者不需要追问，进入下一个问题
+        st.session_state.is_in_followup = False
         st.session_state.current_question_index += 1
         
         # 如果还有问题，继续提问
@@ -882,19 +893,27 @@ def main():
         with col_input:
             st.subheader("💬 您的回答")
             
-            # 文本输入框 - 使用固定key避免重新渲染问题
-            answer = st.text_area(
+            # 如果需要清空输入框
+            if st.session_state.should_clear_input:
+                st.session_state.current_answer_text = ""
+                st.session_state.should_clear_input = False
+            
+            # 如果有待追加的语音文本，先追加
+            if st.session_state.pending_voice_text:
+                if st.session_state.current_answer_text:
+                    st.session_state.current_answer_text += " " + st.session_state.pending_voice_text
+                else:
+                    st.session_state.current_answer_text = st.session_state.pending_voice_text
+                st.session_state.pending_voice_text = None  # 清除待追加文本
+            
+            # 文本输入框 - 直接绑定到session_state
+            st.text_area(
                 "请输入您的回答",
-                value=st.session_state.current_answer_text,
                 height=200,
                 placeholder="在此输入您的回答...",
-                key="answer_text_input",
+                key="current_answer_text",
                 label_visibility="collapsed"
             )
-            
-            # 同步用户手动输入的文本
-            if answer != st.session_state.current_answer_text:
-                st.session_state.current_answer_text = answer
             
             # 按钮容器：提交按钮 + 麦克风按钮
             col_submit, col_mic = st.columns([5, 1])
@@ -903,7 +922,8 @@ def main():
                 if st.button("📤 提交回答", type="primary", use_container_width=True, key="submit_answer"):
                     if st.session_state.current_answer_text.strip():
                         final_answer = st.session_state.current_answer_text
-                        st.session_state.current_answer_text = ""  # 清空输入框
+                        # 设置标志，在下次渲染时清空输入框
+                        st.session_state.should_clear_input = True
                         st.session_state.is_recording = False  # 重置录音状态
                         process_user_answer(final_answer)
                         st.rerun()
@@ -952,11 +972,8 @@ def main():
                                 st.session_state.is_recording = False
                                 
                                 if voice_text:
-                                    # 追加到现有文本后面
-                                    if st.session_state.current_answer_text:
-                                        st.session_state.current_answer_text += " " + voice_text
-                                    else:
-                                        st.session_state.current_answer_text = voice_text
+                                    # 将识别结果存入pending，在下次渲染时应用
+                                    st.session_state.pending_voice_text = voice_text
                                     st.success(f"✅ 识别成功：{voice_text}")
                                     st.rerun()
                                 else:
